@@ -27,7 +27,7 @@ Google will not allow sign-in from a page opened directly as a file (a `file:///
 | Leads | https://goedgy.github.io/giantmotorcars/ |
 | Sold customers | https://goedgy.github.io/giantmotorcars/sold.html |
 
-One switch has to be flipped by hand the first time: **repo → Settings → Pages → Source → GitHub Actions**. After that every push deploys in about a minute (watch it under the **Actions** tab).
+One switch has to be flipped by hand the first time: **repo → Settings → Pages → Source → GitHub Actions**, then re-run the latest run under the **Actions** tab. GitHub won't let the workflow turn Pages on for itself, so until you do this the deploy fails and the addresses above 404. After that every push deploys in about a minute on its own.
 
 **For testing on your own machine**, open a terminal in this folder and run:
 

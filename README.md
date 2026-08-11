@@ -22,7 +22,7 @@ Two static pages backed by Supabase, with Gmail sending built in. No build step,
 
 Push to `main` and the site rebuilds in about a minute — watch it under **Actions**.
 
-One-time switch: **Settings → Pages → Source → GitHub Actions**. Until that's selected the workflow will run and then fail at the deploy step.
+**One-time switch, required before the first successful deploy:** **Settings → Pages → Source → GitHub Actions**. Until it's selected the workflow fails at `configure-pages` with *"Resource not accessible by integration"* — Actions' own token isn't allowed to create the Pages site, only a repo admin can. Once it's on, re-run the latest workflow and every push deploys on its own.
 
 ## Running it locally
 

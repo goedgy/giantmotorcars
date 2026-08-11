@@ -29,7 +29,10 @@ jobs:
       - uses: actions/checkout@v4
 
       # Static site — the repo root is the site, no build step.
-      # enablement turns Pages on via the API, so no manual toggle is needed.
+      # enablement asks the API to turn Pages on, but GITHUB_TOKEN is refused
+      # ("Resource not accessible by integration") for the initial creation,
+      # so Pages still has to be switched on once by hand:
+      # Settings -> Pages -> Source: GitHub Actions. It is a no-op after that.
       - uses: actions/configure-pages@v5
         with:
           enablement: true
