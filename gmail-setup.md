@@ -215,7 +215,7 @@ You'll see the list of who was skipped and why before you send.
 
 **Daily limits.** A free Gmail account allows roughly **500 recipients per day**; Google Workspace allows 2,000. The app tracks how many you've sent today and warns before large batches. Exceeding it locks sending for about 24 hours, so split large campaigns across days.
 
-**Unsubscribes are manual right now.** The footer asks people to reply "unsubscribe". When someone does, set `email_opt_out = true` on their row in Supabase and they'll be excluded from every future send. Automating this needs inbox read access, which is a heavier Google review — worth doing only if the volume justifies it.
+**Unsubscribes are manual right now.** The footer asks people to reply "unsubscribe". When someone does, open their record on the Sold page → **✏ Edit all fields** → tick **Unsubscribed**. They're then excluded from every future send, on both the single-customer screen and the Blast page. (This used to require editing the row in Supabase by hand.) Automating it needs inbox read access, which is a heavier Google review — worth doing only if the volume justifies it.
 
 **Password changes revoke access.** Changing your Gmail password invalidates the connection. The app will show **Connect Gmail** again — click it and you're back.
 

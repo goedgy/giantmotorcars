@@ -13,7 +13,7 @@ Two static pages backed by Supabase, with Gmail sending built in. No build step,
 | File | |
 |---|---|
 | `index.html` | Leads board — kanban pipeline, Frazer import, per-lead detail |
-| `sold.html` | Sold customers — table, filters, tag tracking, Frazer import |
+| `sold.html` | Sold customers — table, filters, tag tracking, full record editor, Frazer import |
 | `blast.html` | Email blast — audience builder, rich composer, live preview, batch send |
 | `messaging.js` | Shared email engine: field registry, `{{token}}` merge, MIME assembly, Gmail OAuth + send, message logging |
 | `email-editor.js` | Rich text editor — formatting, inline images, merge-token chips, email-safe HTML output |

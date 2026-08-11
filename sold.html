@@ -113,6 +113,15 @@ tbody tr:hover td{background:#FAFBFC;cursor:pointer}
 .kv .k{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
 .kv .v{margin-top:2px}
 
+/* full-record editor */
+.modal.wide{max-width:780px}
+.ein{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;outline:none;background:#fff;margin-top:3px}
+.ein:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(4,120,87,.12)}
+.echk{display:flex;align-items:center;gap:8px;margin-top:7px;font-weight:500;cursor:pointer}
+.echk input{width:16px;height:16px;accent-color:var(--primary);flex:none}
+.ehint{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4}
+.edirty{color:var(--primary);font-weight:600}
+
 .statc{flex:1;background:var(--paper);border-radius:11px;padding:14px;text-align:center}
 .statc .n{font-family:'Space Grotesk';font-weight:700;font-size:26px}
 .statc .l{font-size:12px;color:var(--muted);font-weight:500}
@@ -370,7 +379,8 @@ function openDetail(idx){
       <button class="x" onclick="closeModal()">×</button></div>
     <div class="modal-b">
       <div class="sec">Buyer</div>
-      <div class="grid2">${kv('Cell phone',fmtPhone(r.cell_phone),1)}${kv('Home phone',fmtPhone(r.home_phone),1)}${kv('Email',r.email)}</div>
+      <div class="grid2">${kv('Cell phone',fmtPhone(r.cell_phone),1)}${kv('Home phone',fmtPhone(r.home_phone),1)}${kv('Email',r.email)}
+        ${r.email_opt_out?`<div class="kv"><div class="k">Email status</div><div class="v" style="color:#B91C1C;font-weight:600">Unsubscribed</div></div>`:''}</div>
       <div class="sec">Sale</div>
       <div class="grid2">${kv('Sale date',fmtDate(r.sale_date),1)}${kv('Type of sale',r.sale_type)}${kv('1st payment',fmtDate(r.first_payment_date),1)}
         ${kv('Payment amount',fmtMoney(r.note_payment_amount),1)}${kv('Pay schedule',r.pay_schedule)}${kv('Number of payments',r.num_payments,1)}${kv('Current date due',fmtDate(r.current_due_date),1)}${kv('Lienholder',r.lien_holder)}
@@ -390,6 +400,7 @@ function openDetail(idx){
       <div id="gmcHist" style="color:var(--muted);font-size:13px">Loading…</div>
     </div>
     <div class="modal-f"><button class="btn-danger" onclick="deleteSold(${idx})">Delete</button><button class="btn-primary" onclick="saveTag(${idx})">Save tag info</button><div style="flex:1"></div>
+      <button class="btn-ghost" onclick="openEdit(${idx})">✏ Edit all fields</button>
       <button class="btn-ghost" onclick="emailOne(${idx})" ${r.email?'':'disabled style="opacity:.45;cursor:default" title="No email address on file"'}>✉ Email</button>
       <button class="btn-ghost" onclick="closeModal()">Close</button></div>`);
   if(LIVE) GMCUI.historyHtml(r.id).then(h=>{const el=document.getElementById('gmcHist');if(el)el.innerHTML=h;});
@@ -413,10 +424,163 @@ async function saveTag(idx){
   toast('Tag info saved');closeModal();render();
 }
 
+/* ---------- full record editor ---------- */
+/* Every column the Frazer import can write, plus the three tag fields it
+   can't and the opt-out flag. Order here is the order on screen. */
+const EDIT_FIELDS=[
+  {s:'Buyer',k:'first_name',l:'First name'},
+  {s:'Buyer',k:'last_name',l:'Last name'},
+  {s:'Buyer',k:'cell_phone',l:'Cell phone',t:'tel'},
+  {s:'Buyer',k:'home_phone',l:'Home phone',t:'tel'},
+  {s:'Buyer',k:'email',l:'Email',t:'email'},
+  {s:'Buyer',k:'email_opt_out',l:'Email status',t:'bool',cl:'Unsubscribed',hint:'Leaves them out of every email send'},
+  {s:'Sale',k:'sale_date',l:'Sale date',t:'date'},
+  {s:'Sale',k:'sale_type',l:'Type of sale',t:'list',list:()=>distinct(r=>r.sale_type)},
+  {s:'Sale',k:'lien_holder',l:'Lienholder',t:'list',list:()=>distinct(r=>r.lien_holder)},
+  {s:'Sale',k:'note_payment_amount',l:'Payment amount',t:'money'},
+  {s:'Sale',k:'pay_schedule',l:'Pay schedule',t:'list',list:()=>distinct(r=>r.pay_schedule)},
+  {s:'Sale',k:'num_payments',l:'Number of payments'},
+  {s:'Sale',k:'first_payment_date',l:'1st payment date',t:'date'},
+  {s:'Sale',k:'current_due_date',l:'Current date due',t:'date',hint:'Moves forward as payments are made'},
+  {s:'Sale',k:'service_contract',l:'Service contract',t:'yesno'},
+  {s:'Sale',k:'service_contract_company',l:'Contract company'},
+  {s:'Vehicle',k:'veh_year',l:'Year'},
+  {s:'Vehicle',k:'veh_make',l:'Make'},
+  {s:'Vehicle',k:'veh_model',l:'Model'},
+  {s:'Vehicle',k:'vin',l:'VIN'},
+  {s:'Vehicle',k:'vin_last6',l:'Last 6 of VIN',hint:'Filled from the VIN if you leave it blank'},
+  {s:'Co-buyer',k:'cobuyer_first',l:'First name'},
+  {s:'Co-buyer',k:'cobuyer_last',l:'Last name'},
+  {s:'Co-buyer',k:'cobuyer_home_phone',l:'Home phone',t:'tel'},
+  {s:'Co-buyer',k:'cobuyer_email',l:'Email',t:'email'},
+  {s:'Tag / Registration',k:'tag_in',l:'Tag',t:'bool',cl:'Received'},
+  {s:'Tag / Registration',k:'tag_cost',l:'Tag cost',t:'money'},
+  {s:'Tag / Registration',k:'tag_number',l:'Tag number'},
+];
+
+/* Dates arrive as '2026-07-28' or a full ISO stamp; <input type=date> wants the former. */
+function toDateInput(v){
+  if(!v)return '';
+  const m=String(v).match(/^(\d{4}-\d{2}-\d{2})/);
+  if(m)return m[1];
+  const t=Date.parse(v);
+  if(isNaN(t))return '';
+  const d=new Date(t);
+  return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+}
+
+/* One canonical shape per type, so "no change" compares reliably
+   ('' vs null, 512 vs '512.00', 'Yes' vs 'yes '). */
+function normField(f,v){
+  switch(f.t){
+    case 'bool':  return !!v;
+    case 'money': return toMoney(v);
+    case 'date':  return toDateInput(v);
+    default:      return v==null?'':String(v).trim();
+  }
+}
+
+function editRowHtml(f,r){
+  const id='e_'+f.k;
+  const cur=r[f.k];
+  const hint=f.hint?`<div class="ehint">${esc(f.hint)}</div>`:'';
+  if(f.t==='bool'){
+    return `<div class="kv"><div class="k">${esc(f.l)}</div>
+      <label class="echk"><input type="checkbox" id="${id}" ${cur?'checked':''}> ${esc(f.cl||f.l)}</label>${hint}</div>`;
+  }
+  if(f.t==='yesno'){
+    const v=(cur==null?'':String(cur)).trim();
+    const isY=/^y/i.test(v),isN=/^n/i.test(v);
+    return `<div class="kv"><div class="k">${esc(f.l)}</div>
+      <select class="ein" id="${id}">
+        <option value="" ${!isY&&!isN?'selected':''}>—</option>
+        <option value="Yes" ${isY?'selected':''}>Yes</option>
+        <option value="No" ${isN?'selected':''}>No</option>
+      </select>${hint}</div>`;
+  }
+  if(f.t==='date'){
+    return `<div class="kv"><div class="k">${esc(f.l)}</div>
+      <input class="ein" type="date" id="${id}" value="${esc(toDateInput(cur))}">${hint}</div>`;
+  }
+  if(f.t==='money'){
+    const n=toMoney(cur);
+    return `<div class="kv"><div class="k">${esc(f.l)}</div>
+      <input class="ein" id="${id}" inputmode="decimal" placeholder="0.00" value="${n==null?'':n.toFixed(2)}">${hint}</div>`;
+  }
+  if(f.t==='list'){
+    const opts=(f.list?f.list():[]).filter(Boolean);
+    return `<div class="kv"><div class="k">${esc(f.l)}</div>
+      <input class="ein" id="${id}" list="dl_${f.k}" value="${esc(cur==null?'':cur)}">
+      <datalist id="dl_${f.k}">${opts.map(o=>`<option value="${esc(o)}">`).join('')}</datalist>${hint}</div>`;
+  }
+  return `<div class="kv"><div class="k">${esc(f.l)}</div>
+    <input class="ein" type="${f.t==='email'?'email':f.t==='tel'?'tel':'text'}" id="${id}" value="${esc(cur==null?'':cur)}">${hint}</div>`;
+}
+
+function openEdit(idx){
+  const r=state.rows[idx];if(!r)return;
+  const sections=[...new Set(EDIT_FIELDS.map(f=>f.s))];
+  modal(`
+    <div class="modal-h"><div><h2>Edit ${esc(fullName(r))||'record'}</h2>
+      <div style="font-size:12.5px;color:var(--muted);margin-top:3px">Only the fields you actually change get written.</div></div>
+      <button class="x" onclick="openDetail(${idx})">×</button></div>
+    <div class="modal-b">
+      ${sections.map(s=>`<div class="sec">${esc(s)}</div>
+        <div class="grid2">${EDIT_FIELDS.filter(f=>f.s===s).map(f=>editRowHtml(f,r)).join('')}</div>`).join('')}
+    </div>
+    <div class="modal-f">
+      <button class="btn-danger" onclick="deleteSold(${idx})">Delete</button>
+      <div style="flex:1"></div>
+      <button class="btn-ghost" onclick="openDetail(${idx})">Cancel</button>
+      <button class="btn-primary" onclick="saveEdit(${idx})">Save changes</button>
+    </div>`,true);
+}
+
+async function saveEdit(idx){
+  const r=state.rows[idx];if(!r)return;
+
+  const next={};
+  EDIT_FIELDS.forEach(f=>{
+    const el=document.getElementById('e_'+f.k);
+    if(!el)return;
+    next[f.k]=normField(f,f.t==='bool'?el.checked:el.value);
+  });
+
+  // A 17-character VIN already contains the last 6; don't make anyone retype it.
+  if(next.vin&&!next.vin_last6)next.vin_last6=String(next.vin).slice(-6).toUpperCase();
+
+  const patch={},changed=[];
+  EDIT_FIELDS.forEach(f=>{
+    if(!(f.k in next))return;
+    const before=normField(f,r[f.k]),after=next[f.k];
+    if(before===after)return;
+    patch[f.k]=(after===''?null:after);
+    changed.push(f.l);
+  });
+
+  if(!changed.length){toast('Nothing changed');return openDetail(idx);}
+
+  if(patch.email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(patch.email)
+     &&!confirm(`"${patch.email}" doesn't look like a valid email address.\n\nSave it anyway? Emails to this customer will be skipped.`))return;
+
+  if(LIVE){
+    const {error}=await sb.from('sold_customers').update(patch).eq('id',r.id);
+    if(error){
+      // An unknown column means the schema script hasn't been run yet.
+      const miss=/column "?([a-z_]+)"? of relation|could not find the '([a-z_]+)' column/i.exec(error.message);
+      return alert('Save error: '+error.message+(miss?`\n\nThat column doesn't exist in Supabase yet — run the setup SQL from gmail-setup.md.`:''));
+    }
+  }
+  Object.assign(r,patch);
+  toast(changed.length===1?`${changed[0]} updated`:`${changed.length} fields updated`);
+  render();
+  openDetail(idx);
+}
+
 /* ---------- modal ---------- */
-function modal(html){let s=document.getElementById('scrim');
+function modal(html,wide){let s=document.getElementById('scrim');
   if(!s){s=document.createElement('div');s.id='scrim';s.className='scrim';s.onclick=e=>{if(e.target===s)closeModal();};document.body.appendChild(s);}
-  s.innerHTML=`<div class="modal">${html}</div>`;}
+  s.innerHTML=`<div class="modal${wide?' wide':''}">${html}</div>`;}
 function closeModal(){const s=document.getElementById('scrim');if(s)s.remove();}
 function toast(m){const t=document.createElement('div');t.textContent=m;t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--asphalt);color:#fff;padding:11px 18px;border-radius:10px;font-weight:600;font-size:13px;box-shadow:var(--shadow-lg);z-index:100';document.body.appendChild(t);setTimeout(()=>t.remove(),2800);}
 
