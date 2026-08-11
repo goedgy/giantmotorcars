@@ -6,6 +6,7 @@ Two static pages backed by Supabase, with Gmail sending built in. No build step,
 |---|---|
 | Leads pipeline | https://goedgy.github.io/giantmotorcars/ |
 | Sold customers | https://goedgy.github.io/giantmotorcars/sold.html |
+| Email blast | https://goedgy.github.io/giantmotorcars/blast.html |
 
 ## What's in here
 
@@ -13,10 +14,24 @@ Two static pages backed by Supabase, with Gmail sending built in. No build step,
 |---|---|
 | `index.html` | Leads board — kanban pipeline, Frazer import, per-lead detail |
 | `sold.html` | Sold customers — table, filters, tag tracking, Frazer import |
-| `messaging.js` | Shared email engine: field registry, `{{token}}` merge, Gmail OAuth + send, message logging |
+| `blast.html` | Email blast — audience builder, rich composer, live preview, batch send |
+| `messaging.js` | Shared email engine: field registry, `{{token}}` merge, MIME assembly, Gmail OAuth + send, message logging |
+| `email-editor.js` | Rich text editor — formatting, inline images, merge-token chips, email-safe HTML output |
 | `messaging-ui.js` | Compose screen, template manager, per-record email history |
 | `gmail-setup.md` | One-time setup: database scripts, Google Cloud, sending guide |
 | `.github/workflows/pages.yml` | Deploys the repo root to GitHub Pages on every push to `main` |
+
+## How an email is built
+
+Worth knowing, because two of these steps are why the emails render properly:
+
+1. You compose in `email-editor.js`. Images sit in the document as `data:` URIs so you can see them while you work.
+2. On the way out, `toEmailHtml()` inlines every style. Gmail strips `<style>` blocks, so anything not inlined is lost.
+3. `extractImages()` swaps each `data:` URI for a `cid:` reference and hands back the bytes. **No major mail client renders a `data:` image** — they have to travel as attached parts.
+4. `wrapEmail()` puts the content in a 600px table-based card. Outlook still uses Word's rendering engine and ignores most modern layout CSS.
+5. `buildMime()` assembles `multipart/related` → `multipart/alternative` → (`text/plain` + `text/html`) → image parts. The plain-text twin matters for spam scoring.
+
+Images are downscaled to 1088px wide and re-encoded before they are ever attached. They are also extracted **once per batch**, not once per recipient, since they are identical for everyone.
 
 ## Deploying
 

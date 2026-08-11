@@ -14,6 +14,7 @@
     SUPABASE_URL:      "https://rnxjiiceacpdswlvjfwp.supabase.co",
     SUPABASE_ANON_KEY: "sb_publishable_mTvsidLyuX3m_Q_Ma-KmJw_PgTH5hcZ",
     LEADS_URL:         "index.html",   // link to the Leads page
+    BLAST_URL:         "blast.html",   // link to the Email Blast page
     DEALER_NAME:       "Giant Motor Cars",
     DEALER_PHONE:      "813-222-0010",
 
@@ -141,6 +142,7 @@ tbody tr:hover td{background:#FAFBFC;cursor:pointer}
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="messaging.js"></script>
+<script src="email-editor.js"></script>
 <script src="messaging-ui.js"></script>
 <script>
 /* ============================================================
@@ -288,6 +290,7 @@ function render(){
       <div class="appsw">
         <a href="${esc(CFG.LEADS_URL||'index.html')}">Leads</a>
         <a class="on">Sold</a>
+        <a href="${esc(CFG.BLAST_URL||'blast.html')}">Blast</a>
       </div>
       <div class="stat"><div class="n">${state.rows.length}</div><div class="l">Total sold</div></div>
       <div class="stat"><div class="n">${mCount}</div><div class="l">Sold this month</div></div>

@@ -41,6 +41,9 @@ let C = null;   // compose state
   .gmc-prev{border:1px solid var(--line);border-radius:10px;background:#FAFBFC;padding:16px;
     min-height:clamp(280px,46vh,540px);font-size:13.5px;line-height:1.55;overflow-wrap:anywhere}
   .gmc-prev .subj{font-weight:700;font-size:14.5px;padding-bottom:9px;margin-bottom:11px;border-bottom:1px solid var(--line)}
+  /* The preview renders in an iframe so email styles can't leak into the app. */
+  .gmc-pvf{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#f2f4f7}
+  .gmc-pvf iframe{display:block;width:100%;height:clamp(300px,50vh,540px);border:0;background:#f2f4f7}
   .gmc-step{display:flex;align-items:center;gap:8px;margin-bottom:9px}
   .gmc-step button{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:#fff;font-weight:700;cursor:pointer}
   .gmc-step button:disabled{opacity:.35;cursor:default}
@@ -126,11 +129,27 @@ async function openCompose(records) {
 function redraw() {
   if (!C) return;
   wideModal(composeHtml());
+  mountEditor();
+  refreshPreview();   // the iframe is built empty; fill it before anyone types
+}
+
+/* Remounted on every redraw; typing only repaints the preview, so the
+   caret survives everything except an explicit template switch. */
+function mountEditor() {
+  const host = document.getElementById('gmcEd');
+  if (!host || !global.GMCEditor) return;
+  C.editor = GMCEditor.mount(host, {
+    html: C.body,
+    fields: GMC.fieldsFor(GMC._state.recordType),
+    accent: GMC._state.cfg.EMAIL_ACCENT,
+    minHeight: '260px',
+    placeholder: 'Write your message. Use the toolbar for formatting and images.',
+    onChange: () => { C.body = C.editor.getHtml(); refreshPreview(); }
+  });
 }
 
 function composeHtml() {
   const n = C.send.length;
-  const fields = GMC.fieldsFor(GMC._state ? GMC._state.recordType : 'lead');
 
   if (C.results) return resultsHtml();
   if (C.sending) return progressHtml();
@@ -168,14 +187,12 @@ function composeHtml() {
           oninput="GMCUI.onEdit('subject',this.value)" style="margin-bottom:13px">
 
         <div class="gmc-lbl">Message</div>
-        <textarea class="gmc-in" id="gmcBody" placeholder="Write your message. Click a field below to insert it."
-          oninput="GMCUI.onEdit('body',this.value)">${esc(C.body)}</textarea>
-
-        <div class="gmc-lbl" style="margin-top:13px">Insert a field</div>
-        <div>${fields.map(f => `<span class="gmc-tok" title="${esc(f.l)}" onclick="GMCUI.insert('${f.t}')">{{${f.t}}}</span>`).join('')}</div>
-        <div style="font-size:11.5px;color:var(--muted);margin-top:7px;line-height:1.5">
-          Add a fallback with a pipe: <code style="background:var(--line-2,#EDEFF3);padding:1px 5px;border-radius:4px">{{first_name|there}}</code>
-          uses “there” when the field is empty.
+        <div id="gmcEd"></div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:9px;line-height:1.5">
+          <b>Insert field…</b> in the toolbar drops in a merge token. Click a token to choose what it
+          says when a customer is missing that value — <code style="background:var(--line-2,#EDEFF3);padding:1px 5px;border-radius:4px">{{first_name|there}}</code>
+          prints “there” for anyone with no first name. Images are attached to the email itself, so
+          nothing needs hosting.
         </div>
       </div>
 
@@ -203,9 +220,6 @@ function previewHtml() {
   }
   const i = Math.min(C.idx, C.send.length - 1);
   const r = C.send[i];
-  const type = GMC._state.recordType;
-  const subj = GMC.renderTemplate(C.subject, r.rec, type);
-  const body = GMC.renderTemplate(C.body, r.rec, type);
 
   return `
   <div class="gmc-step">
@@ -214,12 +228,37 @@ function previewHtml() {
     <div class="who"><b>${esc(r.name)}</b> &lt;${esc(r.email)}&gt;
       <span style="color:var(--muted)"> · ${i + 1} of ${C.send.length}</span></div>
   </div>
-  <div class="gmc-prev">
-    <div class="subj">${subj ? esc(subj) : '<span style="color:var(--muted);font-weight:400">(no subject)</span>'}</div>
-    ${body
-      ? esc(body).replace(/\n/g, '<br>')
-      : '<span style="color:var(--muted)">Your message will appear here, with each customer’s details filled in.</span>'}
-  </div>`;
+  <div class="subj" id="gmcPvSubj" style="font-weight:700;font-size:14px;margin-bottom:8px"></div>
+  <div class="gmc-pvf"><iframe id="gmcPv" sandbox="" title="Email preview"></iframe></div>`;
+}
+
+/* Rebuilds the whole right-hand column (recipient changed). */
+function renderPreviewPane() {
+  const p = document.querySelector('.gmc-cols > div:last-child');
+  if (!p) return;
+  p.innerHTML = `<div class="gmc-lbl">Preview</div>${previewHtml()}${C.skip.length ? skipHtml() : ''}`;
+  refreshPreview();
+}
+
+/* Cheap path: only the rendered email and the warning line change. */
+function refreshPreview() {
+  if (!C || !C.send.length) return;
+  const i = Math.min(C.idx, C.send.length - 1);
+  const r = C.send[i];
+  const type = GMC._state.recordType;
+  const subj = GMC.renderTemplate(C.subject, r.rec, type);
+  const body = GMC.renderTemplate(C.body, r.rec, type);
+
+  const s = document.getElementById('gmcPvSubj');
+  if (s) s.innerHTML = subj ? esc(subj) : '<span style="color:var(--muted);font-weight:400">(no subject)</span>';
+
+  const f = document.getElementById('gmcPv');
+  if (f) f.srcdoc = GMC.wrapEmail(
+    body || '<p style="color:#9AA3AF">Your message will appear here, with this customer’s details filled in.</p>',
+    { subject: subj });
+
+  const w = document.getElementById('gmcWarn');
+  if (w) w.textContent = blankWarning();
 }
 
 function blankWarning() {
@@ -265,37 +304,35 @@ function skipHtml() {
 function pickTemplate(id) {
   const t = id ? GMC.templates.find(x => String(x.id) === String(id)) : null;
   C.templateId = t ? t.id : null;
-  if (t) { C.subject = t.subject || ''; C.body = t.body || ''; }
+  if (t) {
+    C.subject = t.subject || '';
+    // Templates written before the rich editor are plain text.
+    C.body = GMC.looksLikeHtml(t.body) ? t.body : GMCEditor.textToEditable(t.body || '');
+  }
   redraw();
 }
 
 /* Update state and refresh only the preview, so the caret stays put. */
 function onEdit(key, val) {
   C[key] = val;
-  const p = document.querySelector('.gmc-cols > div:last-child');
-  if (p) p.innerHTML = `<div class="gmc-lbl">Preview</div>${previewHtml()}${C.skip.length ? skipHtml() : ''}`;
-  const w = document.getElementById('gmcWarn');
-  if (w) w.textContent = blankWarning();
+  refreshPreview();
 }
 
 function insert(token) {
-  const ta = document.getElementById('gmcBody');
-  if (!ta) return;
-  const s = ta.selectionStart || 0, e = ta.selectionEnd || 0;
-  const txt = '{{' + token + '}}';
-  ta.value = ta.value.slice(0, s) + txt + ta.value.slice(e);
-  ta.focus();
-  ta.selectionStart = ta.selectionEnd = s + txt.length;
-  onEdit('body', ta.value);
+  if (C.editor) C.editor.insertField(token);
 }
 
 function step(d) {
   C.idx = Math.max(0, Math.min(C.send.length - 1, C.idx + d));
-  onEdit('body', C.body);
+  renderPreviewPane();
 }
 
 function toggleSkip() { C.showSkip = !C.showSkip; redraw(); }
-function close() { C = null; global.closeModal(); }
+function close() {
+  if (C && C.editor) { try { C.editor.destroy(); } catch (e) {} }
+  C = null;
+  global.closeModal();
+}
 
 /* ---------- sending ---------- */
 function progressHtml() {
@@ -333,7 +370,9 @@ function resultsHtml() {
 
 async function send() {
   if (!C || !C.send.length) return;
-  if (!C.subject.trim() && !C.body.trim()) return alert('Add a subject or a message first.');
+  if (C.editor) C.body = C.editor.getHtml();
+  const bodyEmpty = C.editor ? C.editor.isEmpty() : !C.body.trim();
+  if (!C.subject.trim() && bodyEmpty) return alert('Add a subject or a message first.');
   if (!C.subject.trim() && !confirm('This email has no subject line. Send anyway?')) return;
 
   if (!GMC.gmailConfigured()) {
@@ -352,7 +391,10 @@ async function send() {
   const type    = GMC._state.recordType;
   const batchId = (global.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
   const sender  = GMC._state.getUserName();
-  const footer  = GMC.footerFor();
+
+  // Images are the same for everyone — pull them out of the body once and
+  // attach the identical parts to each message.
+  const { html: cidBody, images } = GMCEditor.extractImages(C.body);
 
   C.sending = true; C.progress = 0; C.current = '';
   redraw();
@@ -361,8 +403,9 @@ async function send() {
 
   for (const r of C.send) {
     const subject = GMC.renderTemplate(C.subject, r.rec, type);
-    const bodyTxt = GMC.renderTemplate(C.body, r.rec, type);
-    const html    = GMC.textToHtml(bodyTxt) + footer;
+    const merged  = GMC.renderTemplate(cidBody, r.rec, type);
+    const html    = GMC.wrapEmail(merged, { subject });
+    const bodyTxt = GMC.htmlToText(html);
 
     C.current = r.name;
     const bar = document.querySelector('.gmc-prog i');
@@ -372,7 +415,7 @@ async function send() {
 
     try {
       const res = await GMC.sendOne({
-        to: r.email, toName: r.name, subject, html,
+        to: r.email, toName: r.name, subject, html, text: bodyTxt, images,
         fromName: GMC._state.cfg.DEALER_NAME
       });
       sent.push(r);
@@ -474,7 +517,7 @@ function drawTemplateEditor() {
         <div class="gmc-lbl">Subject</div>
         <input class="gmc-in" id="tpl_subj" value="${esc(t.subject || '')}" style="margin-bottom:12px">
         <div class="gmc-lbl">Body</div>
-        <textarea class="gmc-in" id="tpl_body">${esc(t.body || '')}</textarea>
+        <div id="tpl_ed"></div>
       </div>
       <div>
         <div class="gmc-lbl">Available fields</div>
@@ -495,6 +538,17 @@ function drawTemplateEditor() {
     <div style="flex:1"></div>
     <button class="btn-primary" onclick="GMCUI.saveTemplateForm()">Save template</button>
   </div>`);
+
+  const host = document.getElementById('tpl_ed');
+  if (host && global.GMCEditor) {
+    T.editor = GMCEditor.mount(host, {
+      html: GMC.looksLikeHtml(t.body) ? t.body : GMCEditor.textToEditable(t.body || ''),
+      fields: GMC.fieldsFor(GMC._state.recordType),
+      accent: GMC._state.cfg.EMAIL_ACCENT,
+      minHeight: '300px',
+      placeholder: 'Write the template. Tokens are filled in per customer when it is sent.'
+    });
+  }
 }
 
 function editTemplate(id) {
@@ -504,13 +558,7 @@ function editTemplate(id) {
 }
 
 function insertTpl(token) {
-  const ta = document.getElementById('tpl_body');
-  if (!ta) return;
-  const s = ta.selectionStart || 0, e = ta.selectionEnd || 0;
-  const txt = '{{' + token + '}}';
-  ta.value = ta.value.slice(0, s) + txt + ta.value.slice(e);
-  ta.focus();
-  ta.selectionStart = ta.selectionEnd = s + txt.length;
+  if (T && T.editor) T.editor.insertField(token);
 }
 
 async function saveTemplateForm() {
@@ -521,9 +569,9 @@ async function saveTemplateForm() {
     name,
     category: document.getElementById('tpl_cat').value.trim(),
     subject: document.getElementById('tpl_subj').value,
-    body: document.getElementById('tpl_body').value
+    body: T.editor ? T.editor.getHtml() : ''
   };
-  if (!t.body.trim()) return alert('The template body is empty.');
+  if (T.editor ? T.editor.isEmpty() : !t.body.trim()) return alert('The template body is empty.');
   try { await GMC.saveTemplate(t); }
   catch (e) { return alert('Could not save: ' + e.message); }
   T.editing = null;
