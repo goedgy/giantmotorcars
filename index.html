@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Giant Motor Cars — Leads</title>
+
+<!-- ============================================================
+     CONFIG — paste your Supabase project values here to go live.
+     Leave blank to run in local Demo Mode (sample data, no login).
+     ============================================================ -->
+<script>
+  window.LEADS_CONFIG = {
+    SUPABASE_URL:      "https://rnxjiiceacpdswlvjfwp.supabase.co",
+    SUPABASE_ANON_KEY: "sb_publishable_mTvsidLyuX3m_Q_Ma-KmJw_PgTH5hcZ",
+    SOLD_URL:          "sold.html",   // link to the Sold Customers page
+    DEALER_NAME:       "Giant Motor Cars",
+    DEALER_PHONE:      "813-222-0010",
+
+    // ---- Email (Gmail) -------------------------------------
+    // Paste the OAuth client ID from Google Cloud here. Steps: gmail-setup.md
+    GOOGLE_CLIENT_ID:  "227059275402-tuk4q9f57sc30kioj57f1t2c7fbnhqjh.apps.googleusercontent.com",
+    // Shown in the footer of every email — CAN-SPAM requires a physical address
+    DEALER_ADDRESS:    "2004 E Dr Martin Luther King Jr Blvd, Tampa, FL 33610"
+
+  };
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --asphalt:#14171C; --asphalt-2:#1B1F27; --asphalt-3:#242A34;
+  --ink:#0F1115; --muted:#6B7280; --muted-2:#9AA3AF;
+  --paper:#F4F5F7; --card:#FFFFFF; --line:#E4E7EC; --line-2:#EDEFF3;
+  --primary:#2F6BFF; --primary-ink:#1E4FCC; --primary-soft:#EAF0FF;
+  --s-new:#3B82F6; --s-contacted:#8B5CF6; --s-appt:#06B6D4;
+  --s-showed:#F59E0B; --s-fni:#EC4899; --s-sold:#10B981; --s-funded:#047857; --s-lost:#94A3B8;
+  --fresh:#10B981; --warm:#F59E0B; --cold:#EF4444;
+  --shadow:0 1px 2px rgba(16,17,21,.04),0 4px 16px rgba(16,17,21,.06);
+  --shadow-lg:0 12px 40px rgba(16,17,21,.18);
+  --r:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);
+  font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:14px}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:230px 1fr;height:100vh;overflow:hidden}
+.side{background:var(--asphalt);color:#fff;display:flex;flex-direction:column;padding:20px 14px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px}
+.brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#5B8CFF);
+  display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:17px;color:#fff;flex:none}
+.brand .bn{font-family:'Space Grotesk';font-weight:600;font-size:15px;line-height:1.15}
+.brand .bn small{display:block;font-family:'Inter';font-weight:400;font-size:11px;color:var(--muted-2)}
+.appsw{display:flex;gap:4px;background:var(--asphalt-2);border-radius:10px;padding:4px;margin:0 8px 14px}
+.appsw a{flex:1;text-align:center;padding:7px 8px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--muted-2);text-decoration:none;transition:.12s}
+.appsw a:hover{color:#fff}
+.appsw a.on{background:var(--asphalt-3);color:#fff}
+.nav{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.nav button{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;
+  color:#C3CAD6;font-weight:500;font-size:13.5px;text-align:left;transition:.12s}
+.nav button:hover{background:var(--asphalt-2);color:#fff}
+.nav button.on{background:var(--asphalt-3);color:#fff}
+.nav .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.nav .ct{margin-left:auto;font-size:12px;color:var(--muted-2);font-variant-numeric:tabular-nums}
+.side-foot{margin-top:auto;padding:12px 8px 2px;border-top:1px solid var(--asphalt-3)}
+.side-foot .u{display:flex;align-items:center;gap:9px;font-size:13px}
+.side-foot .av{width:28px;height:28px;border-radius:50%;background:var(--primary);display:grid;place-items:center;
+  font-weight:600;font-size:12px;color:#fff;flex:none}
+.side-foot .lo{color:var(--muted-2);font-size:12px;margin-top:8px}
+.side-foot .lo:hover{color:#fff}
+
+/* ---------- main ---------- */
+.main{display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:12px;padding:16px 24px;background:var(--card);border-bottom:1px solid var(--line)}
+.topbar h1{font-family:'Space Grotesk';font-size:19px;font-weight:600;margin:0}
+.search{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);
+  border-radius:10px;padding:0 12px;height:38px;min-width:230px}
+.search input{border:none;background:none;outline:none;width:100%;color:var(--ink)}
+.search svg{color:var(--muted);flex:none}
+.spacer{flex:1}
+.filter{height:38px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);
+  color:var(--ink);font-weight:500}
+.seg{display:flex;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{padding:6px 13px;border-radius:7px;font-weight:600;font-size:13px;color:var(--muted)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.btn-primary{height:38px;padding:0 16px;background:var(--primary);color:#fff;border-radius:10px;font-weight:600;
+  display:flex;align-items:center;gap:7px;transition:.12s}
+.btn-primary:hover{background:var(--primary-ink)}
+
+.demo-flag{background:#FEF3C7;color:#92400E;font-weight:600;font-size:12.5px;
+  padding:7px 24px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #FDE68A}
+
+/* ---------- board ---------- */
+.content{flex:1;overflow:auto;padding:20px 24px}
+.board{display:flex;gap:14px;height:100%;align-items:flex-start;min-width:min-content}
+.col{background:#EEF0F4;border-radius:14px;width:262px;flex:none;display:flex;flex-direction:column;max-height:100%}
+.col-h{display:flex;align-items:center;gap:8px;padding:13px 14px 10px;position:sticky;top:0}
+.col-h .cdot{width:9px;height:9px;border-radius:50%}
+.col-h .cname{font-family:'Space Grotesk';font-weight:600;font-size:13.5px}
+.col-h .cnum{margin-left:auto;font-size:12px;font-weight:600;color:var(--muted);background:#fff;
+  border-radius:20px;padding:1px 9px;font-variant-numeric:tabular-nums}
+.col-body{padding:2px 10px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:9px;flex:1;min-height:60px}
+.col.drop{outline:2px dashed var(--primary);outline-offset:-4px}
+
+.card{background:var(--card);border-radius:11px;padding:12px;box-shadow:var(--shadow);cursor:grab;
+  border:1px solid transparent;transition:.12s}
+.card:hover{border-color:var(--line);transform:translateY(-1px)}
+.card.drag{opacity:.4}
+.card .top{display:flex;align-items:flex-start;gap:8px}
+.card .nm{font-weight:600;font-size:14px;line-height:1.2;flex:1}
+.card .veh{color:var(--muted);font-size:12.5px;margin:5px 0 9px;display:flex;align-items:center;gap:5px}
+.card .meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--line-2);color:var(--muted)}
+.badge.src{background:#EEF2FF;color:#4338CA}
+.badge.cash{background:#ECFDF5;color:#047857}
+.av-sm{width:24px;height:24px;border-radius:50%;background:var(--asphalt-3);color:#fff;font-size:10.5px;
+  font-weight:600;display:grid;place-items:center;margin-left:auto;flex:none}
+.age{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;margin-top:9px;
+  padding-top:9px;border-top:1px solid var(--line-2)}
+.age .pip{width:7px;height:7px;border-radius:50%}
+.age .ph{margin-left:auto;color:var(--muted);font-weight:500}
+
+.empty-col{color:var(--muted-2);font-size:12px;text-align:center;padding:14px 4px;font-style:italic}
+
+/* ---------- list ---------- */
+.selbar{display:flex;align-items:center;gap:10px;background:var(--primary-soft);border:1px solid #BFD3FF;
+  border-radius:11px;padding:9px 14px;margin-bottom:12px;font-size:13.5px}
+.selbar span{margin-right:auto}
+.tablewrap{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);
+  font-weight:600;padding:12px 16px;background:var(--paper);border-bottom:1px solid var(--line)}
+td{padding:13px 16px;border-bottom:1px solid var(--line-2);font-size:13.5px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFBFC;cursor:pointer}
+.pill{font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:20px;color:#fff;display:inline-block}
+
+/* ---------- modal ---------- */
+.scrim{position:fixed;inset:0;background:rgba(15,17,21,.5);backdrop-filter:blur(2px);
+  display:grid;place-items:center;padding:20px;z-index:50;animation:fade .15s}
+@keyframes fade{from{opacity:0}}
+.modal{background:var(--card);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow:auto;
+  box-shadow:var(--shadow-lg);animation:pop .18s}
+@keyframes pop{from{transform:translateY(8px) scale(.98);opacity:.6}}
+.modal-h{display:flex;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:1}
+.modal-h h2{font-family:'Space Grotesk';font-size:17px;margin:0}
+.modal-h .x{margin-left:auto;color:var(--muted);width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-size:20px}
+.modal-h .x:hover{background:var(--paper);color:var(--ink)}
+.modal-b{padding:20px 22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fld{margin-bottom:14px}
+.fld label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.fld input,.fld select,.fld textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;
+  outline:none;color:var(--ink);background:#fff;transition:.12s}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.fld textarea{resize:vertical;min-height:60px}
+.modal-f{display:flex;gap:10px;padding:16px 22px;border-top:1px solid var(--line);position:sticky;bottom:0;background:#fff}
+.btn-ghost{height:38px;padding:0 16px;border:1px solid var(--line);border-radius:10px;font-weight:600;color:var(--muted)}
+.btn-ghost:hover{background:var(--paper);color:var(--ink)}
+.btn-danger{height:38px;padding:0 16px;border:1px solid #FCA5A5;border-radius:10px;font-weight:600;color:#B91C1C;background:#fff}
+.btn-danger:hover{background:#FEF2F2}
+
+.activity{margin-top:6px}
+.act-row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-2)}
+.act-row .ai{width:26px;height:26px;border-radius:7px;background:var(--paper);display:grid;place-items:center;flex:none;font-size:13px}
+.act-row .ab{flex:1}
+.act-row .at{font-size:11px;color:var(--muted-2);margin-top:2px}
+.addnote{display:flex;gap:8px;margin-top:12px}
+.addnote input{flex:1;padding:9px 11px;border:1px solid var(--line);border-radius:9px;outline:none}
+.addnote input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+
+/* ---------- login ---------- */
+.login{height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,#1B1F27,#0C0E12)}
+.login .box{background:#fff;border-radius:18px;padding:34px 30px;width:360px;box-shadow:var(--shadow-lg)}
+.login .mark{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--primary),#5B8CFF);
+  display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:22px;color:#fff;margin-bottom:16px}
+.login h1{font-family:'Space Grotesk';font-size:21px;margin:0 0 4px}
+.login p{color:var(--muted);margin:0 0 22px;font-size:13.5px}
+.login .fld{margin-bottom:13px}
+.login .btn-primary{width:100%;justify-content:center;height:42px;margin-top:6px}
+.login .err{color:var(--cold);font-size:13px;margin-top:12px;min-height:18px}
+
+.hidden{display:none!important}
+@media(max-width:760px){
+  .app{grid-template-columns:1fr}
+  .side{display:none}
+  .grid2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="messaging.js"></script>
+<script src="messaging-ui.js"></script>
+<script>
+/* ============================================================
+   Giant Motor Cars — Leads Manager
+   ============================================================ */
+const CFG = window.LEADS_CONFIG;
+const LIVE = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
+let sb = LIVE ? supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY) : null;
+
+const STATUSES = [
+  {k:'new',       label:'New',          color:'var(--s-new)'},
+  {k:'contacted', label:'Contacted',    color:'var(--s-contacted)'},
+  {k:'appt',      label:'Appointment',  color:'var(--s-appt)'},
+  {k:'showed',    label:'Showed',       color:'var(--s-showed)'},
+  {k:'fni',       label:'In F&I',       color:'var(--s-fni)'},
+  {k:'sold',      label:'Sold',         color:'var(--s-sold)'},
+  {k:'funded',    label:'Funded',       color:'var(--s-funded)'},
+  {k:'lost',      label:'Lost',         color:'var(--s-lost)'},
+];
+const SC = Object.fromEntries(STATUSES.map(s=>[s.k,s]));
+const SOURCES = ['Walk-in','Website','Phone Up','Facebook','Cars.com','CarGurus','Referral','Repeat','DealerCenter','Other'];
+
+const state = { user:null, view:'board', q:'', fSource:'', fAssigned:'', leads:[], open:null, selected:new Set(), sort:{key:'age',dir:'desc'} };
+
+/* ---------------- data layer ---------------- */
+async function loadLeads(){
+  if(LIVE){
+    let all=[],from=0;const page=1000;
+    while(true){
+      const {data,error}=await sb.from('leads').select('*').order('stage_changed_at',{ascending:true}).range(from,from+page-1);
+      if(error){alert('Load error: '+error.message);return;}
+      all=all.concat(data||[]);
+      if(!data||data.length<page)break;
+      from+=page;
+    }
+    state.leads=all;
+  }else{
+    state.leads = DEMO.slice();
+  }
+  render();
+}
+async function saveLead(l){
+  if(LIVE){
+    if(l.id){ const {id,created_at,updated_at,stage_changed_at,...u}=l;
+      const {error}=await sb.from('leads').update(u).eq('id',id); if(error)return alert(error.message);
+    }else{ const {error}=await sb.from('leads').insert(l); if(error)return alert(error.message); }
+  }else{
+    if(l.id){ Object.assign(state.leads.find(x=>x.id===l.id), l); }
+    else{ l.id='d'+Date.now(); l.created_at=l.stage_changed_at=new Date().toISOString(); state.leads.push(l); }
+  }
+  await loadLeads();
+}
+async function setStatus(id,status){
+  const l = state.leads.find(x=>x.id===id); if(!l||l.status===status)return;
+  const prev=l.status; l.status=status; l.stage_changed_at=new Date().toISOString();
+  if(LIVE){
+    await sb.from('leads').update({status}).eq('id',id);
+    await sb.from('lead_activities').insert({lead_id:id,author:userName(),type:'status_change',
+      body:`Moved ${SC[prev].label} → ${SC[status].label}`});
+  }else{
+    (l._acts=l._acts||[]).unshift({author:userName(),type:'status_change',
+      body:`Moved ${SC[prev].label} → ${SC[status].label}`,created_at:new Date().toISOString()});
+  }
+  render();
+}
+async function loadActivities(id){
+  if(LIVE){
+    const {data}=await sb.from('lead_activities').select('*').eq('lead_id',id).order('created_at',{ascending:false});
+    return data||[];
+  }
+  return (state.leads.find(x=>x.id===id)||{})._acts||[];
+}
+async function addNote(id,body){
+  if(!body.trim())return;
+  if(LIVE){ await sb.from('lead_activities').insert({lead_id:id,author:userName(),type:'note',body});
+    await sb.from('leads').update({notes:body}).eq('id',id); }
+  else{ const l=state.leads.find(x=>x.id===id); (l._acts=l._acts||[]).unshift({author:userName(),type:'note',body,created_at:new Date().toISOString()}); l.notes=body; }
+  openDetail(id,true);
+}
+
+/* ---------------- helpers ---------------- */
+function userName(){ return state.user?.name || 'You'; }
+function initials(n){ return (n||'?').split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+function daysIn(iso){ if(!iso)return 0; return Math.floor((Date.now()-new Date(iso))/864e5); }
+function ageInfo(l){
+  if(l.status==='funded'||l.status==='lost'||l.status==='sold') return null;
+  const d=daysIn(l.stage_changed_at);
+  if(d<=1) return {c:'var(--fresh)',t:d===0?'Today':'1 day'};
+  if(d<=4) return {c:'var(--warm)',t:d+' days'};
+  return {c:'var(--cold)',t:d+' days cold'};
+}
+function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function scoreTier(s){ if(s>=700)return{c:'#10B981',bg:'#ECFDF5',t:'Prime'}; if(s>=640)return{c:'#2563EB',bg:'#EFF6FF',t:'Near-prime'}; if(s>=580)return{c:'#D97706',bg:'#FFF7ED',t:'Subprime'}; return{c:'#DC2626',bg:'#FEF2F2',t:'Deep subprime'}; }
+function scoreBadge(s){ if(!s)return''; const t=scoreTier(s); return `<span class="badge" style="background:${t.bg};color:${t.c}" title="${t.t}">◈ ${s}</span>`; }
+function timeAgo(iso){ const d=daysIn(iso); if(d===0)return 'today'; if(d===1)return 'yesterday'; return d+'d ago'; }
+
+function filtered(){
+  const q=state.q.toLowerCase();
+  return state.leads.filter(l=>{
+    if(state.fSource && l.source!==state.fSource) return false;
+    if(state.fAssigned && l.assigned_to!==state.fAssigned) return false;
+    if(q){ const hay=[l.name,l.phone,l.email,l.vehicle,l.stock_number].join(' ').toLowerCase();
+      if(!hay.includes(q)) return false; }
+    return true;
+  });
+}
+function assignees(){ return [...new Set(state.leads.map(l=>l.assigned_to).filter(Boolean))].sort(); }
+function allSources(){ return [...new Set([...SOURCES,...state.leads.map(l=>l.source).filter(Boolean)])]; }
+
+/* ---------------- render ---------------- */
+function renderContent(){const el=document.getElementById('content');if(el)el.innerHTML=contentHTML();}
+function contentHTML(){
+  const leads=filtered();
+  if(state.view==='board') return board(leads);
+  let bar='';
+  if(state.selected.size){
+    const n=state.leads.filter(l=>state.selected.has(l.id)&&l.email&&!l.email_opt_out).length;
+    bar=`<div class="selbar"><span><b>${state.selected.size}</b> selected</span>
+      <button class="btn-primary" style="height:32px" onclick="emailSelected()">✉ Email ${n||''} ${n===1?'lead':'leads'}</button>
+      <button class="btn-ghost" style="height:32px" onclick="clearSel()">Clear</button></div>`;
+  }
+  return bar+list(leads);
+}
+
+/* ---------------- selection ---------------- */
+function toggleSel(id,e){e.stopPropagation();
+  if(state.selected.has(id))state.selected.delete(id);else state.selected.add(id);renderContent();}
+function toggleSelAll(e){e.stopPropagation();const rows=filtered();
+  const all=rows.length&&rows.every(l=>state.selected.has(l.id));
+  if(all)rows.forEach(l=>state.selected.delete(l.id));else rows.forEach(l=>state.selected.add(l.id));
+  renderContent();}
+function clearSel(){state.selected.clear();renderContent();}
+
+/* ---------------- email ---------------- */
+function emailSelected(){
+  const recs=state.leads.filter(l=>state.selected.has(l.id));
+  if(!recs.length)return;
+  GMCUI.openCompose(recs);
+}
+function emailOne(id){
+  const l=state.leads.find(x=>x.id===id);if(!l)return;
+  if(!l.email)return alert(`${l.name||'This lead'} has no email address on file.`);
+  GMCUI.openCompose([l]);
+}
+function render(){
+  if(LIVE && !state.user){ return renderLogin(); }  const leads=filtered();
+  const counts=Object.fromEntries(STATUSES.map(s=>[s.k,leads.filter(l=>l.status===s.k).length]));
+  const active=leads.filter(l=>!['funded','lost','sold'].includes(l.status)).length;
+
+  document.getElementById('root').innerHTML = `
+  <div class="app">
+    <aside class="side">
+      <div class="brand">
+        <div class="mark">G</div>
+        <div class="bn">${esc(CFG.DEALER_NAME)}<small>Leads Manager</small></div>
+      </div>
+      <div class="appsw">
+        <a class="on">Leads</a>
+        <a href="${esc(CFG.SOLD_URL||'sold.html')}">Sold</a>
+      </div>
+      <div class="nav">
+        <button class="${state.view==='board'?'on':''}" onclick="setView('board')">▦ Pipeline</button>
+        <button class="${state.view==='list'?'on':''}" onclick="setView('list')">☰ All leads<span class="ct">${leads.length}</span></button>
+        <div style="height:14px"></div>
+        ${STATUSES.map(s=>`<button onclick="jumpStatus('${s.k}')">
+          <span class="dot" style="background:${s.color}"></span>${s.label}
+          <span class="ct">${counts[s.k]||0}</span></button>`).join('')}
+      </div>
+      <div class="side-foot">
+        <div class="u"><div class="av">${initials(userName())}</div>
+          <div><div style="font-weight:600">${esc(userName())}</div>
+          <div style="font-size:11px;color:var(--muted-2)">${active} active</div></div></div>
+        ${LIVE?`<div class="lo" onclick="logout()">Sign out</div>`:''}
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <h1>${state.view==='board'?'Pipeline':'All leads'}</h1>
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+          <input placeholder="Search name, phone, vehicle…" value="${esc(state.q)}" oninput="state.q=this.value;renderContent()">
+        </div>
+        <select class="filter" onchange="state.fSource=this.value;render()">
+          <option value="">All sources</option>
+          ${allSources().map(s=>`<option ${state.fSource===s?'selected':''}>${esc(s)}</option>`).join('')}
+        </select>
+        <select class="filter" onchange="state.fAssigned=this.value;render()">
+          <option value="">Everyone</option>
+          ${assignees().map(a=>`<option ${state.fAssigned===a?'selected':''}>${esc(a)}</option>`).join('')}
+        </select>
+        <div class="spacer"></div>
+        <div class="seg">
+          <button class="${state.view==='board'?'on':''}" onclick="setView('board')">Board</button>
+          <button class="${state.view==='list'?'on':''}" onclick="setView('list')">List</button>
+        </div>
+        <button class="btn-ghost" onclick="GMCUI.openTemplates()">✉ Templates</button>
+        <button class="btn-ghost" onclick="openImport()" title="Import daily DealerCenter export">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Import</button>
+        <button class="btn-primary" onclick="openEdit(null)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>New lead</button>
+      </div>
+      ${LIVE?'':'<div class="demo-flag">● Demo mode — sample data, resets on refresh. Add your Supabase keys in the file to go live and share with your team.</div>'}
+      <div class="content" id="content">${contentHTML()}</div>
+    </div>
+  </div>`;
+}
+
+function board(leads){
+  return `<div class="board">${STATUSES.map(s=>{
+    const items=leads.filter(l=>l.status===s.k);
+    return `<div class="col" data-status="${s.k}"
+      ondragover="event.preventDefault();this.classList.add('drop')"
+      ondragleave="this.classList.remove('drop')"
+      ondrop="drop(event,'${s.k}')">
+      <div class="col-h"><span class="cdot" style="background:${s.color}"></span>
+        <span class="cname">${s.label}</span><span class="cnum">${items.length}</span></div>
+      <div class="col-body">
+        ${items.map(cardHtml).join('') || '<div class="empty-col">No leads</div>'}
+      </div></div>`;
+  }).join('')}</div>`;
+}
+
+function cardHtml(l){
+  const age=ageInfo(l);
+  return `<div class="card" draggable="true" ondragstart="dragStart(event,'${l.id}')" ondragend="this.classList.remove('drag')" onclick="openDetail('${l.id}')">
+    <div class="top"><div class="nm">${esc(l.name)}</div>
+      <div class="av-sm" title="${esc(l.assigned_to||'')}">${l.assigned_to?initials(l.assigned_to):'—'}</div></div>
+    <div class="veh">🚗 ${esc(l.vehicle||'—')}${l.stock_number?` · <span class="mono">#${esc(l.stock_number)}</span>`:''}</div>
+    <div class="meta">
+      ${scoreBadge(l.credit_score)}
+      ${l.source?`<span class="badge src">${esc(l.source)}</span>`:''}
+      ${l.deal_type==='cash'?`<span class="badge cash">Cash</span>`:''}
+      <span class="badge mono">${esc(l.phone||'')}</span>
+    </div>
+    ${age?`<div class="age"><span class="pip" style="background:${age.c}"></span>
+      <span style="color:${age.c}">${age.t} in stage</span>
+      <span class="ph">${esc(l.assigned_to||'Unassigned')}</span></div>`:''}
+  </div>`;
+}
+
+function sortVal(l,key){switch(key){
+  case 'name':return (l.name||'').toLowerCase();
+  case 'vehicle':return (l.vehicle||'').toLowerCase();
+  case 'source':return (l.source||'').toLowerCase();
+  case 'score':return l.credit_score||0;
+  case 'status':return STATUSES.findIndex(s=>s.k===l.status);
+  case 'owner':return (l.assigned_to||'').toLowerCase();
+  default:return daysIn(l.stage_changed_at);
+}}
+function setSort(key){const s=state.sort;if(s.key===key)s.dir=s.dir==='asc'?'desc':'asc';
+  else{s.key=key;s.dir=(key==='score'||key==='age')?'desc':'asc';}render();}
+function list(leads){
+  if(!leads.length) return `<div style="text-align:center;color:var(--muted);padding:60px">No leads match. <a href="#" onclick="openEdit(null);return false" style="color:var(--primary)">Add one →</a></div>`;
+  const {key,dir}=state.sort, mul=dir==='asc'?1:-1;
+  const sorted=[...leads].sort((a,b)=>{const av=sortVal(a,key),bv=sortVal(b,key);return av<bv?-mul:av>bv?mul:0;});
+  const arrow=k=>state.sort.key===k?`<span style="color:var(--primary)"> ${state.sort.dir==='asc'?'▲':'▼'}</span>`:'<span style="color:var(--line);opacity:.6"> ⇅</span>';
+  const th=(k,label)=>`<th onclick="setSort('${k}')" style="cursor:pointer;user-select:none;white-space:nowrap">${label}${arrow(k)}</th>`;
+  const allSel=leads.length&&leads.every(l=>state.selected.has(l.id));
+  return `<div class="tablewrap"><table>
+    <thead><tr><th style="width:34px"><input type="checkbox" ${allSel?'checked':''} onclick="toggleSelAll(event)" style="accent-color:var(--primary);cursor:pointer"></th>${th('name','Customer')}${th('vehicle','Vehicle')}${th('source','Source')}${th('score','Score')}${th('status','Status')}${th('owner','Owner')}${th('age','Age')}</tr></thead>
+    <tbody>${sorted.map(l=>{const age=ageInfo(l);const s=SC[l.status];return `<tr onclick="openDetail('${l.id}')">
+      <td onclick="event.stopPropagation()"><input type="checkbox" ${state.selected.has(l.id)?'checked':''} onclick="toggleSel('${l.id}',event)" style="accent-color:var(--primary);cursor:pointer"></td>
+      <td><div style="font-weight:600">${esc(l.name)}</div><div class="mono" style="color:var(--muted);font-size:12px">${esc(l.phone||'')}</div></td>
+      <td>${esc(l.vehicle||'—')}${l.stock_number?`<div class="mono" style="color:var(--muted);font-size:12px">#${esc(l.stock_number)}</div>`:''}</td>
+      <td>${esc(l.source||'—')}</td>
+      <td>${l.credit_score?`<span style="font-weight:600;color:${scoreTier(l.credit_score).c}" class="mono">${l.credit_score}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+      <td><span class="pill" style="background:${s.color}">${s.label}</span></td>
+      <td>${esc(l.assigned_to||'—')}</td>
+      <td>${age?`<span style="color:${age.c};font-weight:600">${age.t}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+    </tr>`;}).join('')}</tbody></table></div>`;
+}
+
+/* ---------------- interactions ---------------- */
+function setView(v){state.view=v;render();}
+function jumpStatus(k){state.view='board';render();
+  requestAnimationFrame(()=>{const c=document.querySelector(`[data-status="${k}"]`);c&&c.scrollIntoView({behavior:'smooth',inline:'center'});});}
+
+let dragId=null;
+function dragStart(e,id){dragId=id;e.target.classList.add('drag');e.dataTransfer.effectAllowed='move';}
+function drop(e,status){e.preventDefault();document.querySelectorAll('.col').forEach(c=>c.classList.remove('drop'));
+  if(dragId)setStatus(dragId,status);dragId=null;}
+
+/* ---------------- edit modal ---------------- */
+function openEdit(id){
+  const l = id ? {...state.leads.find(x=>x.id===id)} : {name:'',phone:'',email:'',vehicle:'',stock_number:'',source:'Walk-in',status:'new',deal_type:'finance',credit_score:'',assigned_to:userName()};
+  const field=(k,label,type='text')=>`<div class="fld"><label>${label}</label><input id="f_${k}" type="${type}" value="${esc(l[k]||'')}"></div>`;
+  modal(`
+    <div class="modal-h"><h2>${id?'Edit lead':'New lead'}</h2><button class="x" onclick="closeModal()">×</button></div>
+    <div class="modal-b">
+      <div class="grid2">${field('name','Full name')}${field('phone','Phone','tel')}</div>
+      ${field('email','Email','email')}
+      <div class="grid2">${field('vehicle','Vehicle of interest')}${field('stock_number','Stock #')}</div>
+      <div class="grid2">
+        <div class="fld"><label>Source</label><select id="f_source">${SOURCES.map(s=>`<option ${l.source===s?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="fld"><label>Deal type</label><select id="f_deal_type"><option value="finance" ${l.deal_type==='finance'?'selected':''}>Finance</option><option value="cash" ${l.deal_type==='cash'?'selected':''}>Cash</option></select></div>
+      </div>
+      <div class="grid2">
+        <div class="fld"><label>Status</label><select id="f_status">${STATUSES.map(s=>`<option value="${s.k}" ${l.status===s.k?'selected':''}>${s.label}</option>`).join('')}</select></div>
+        ${field('assigned_to','Assigned to')}
+      </div>
+      <div class="fld" style="max-width:180px"><label>Credit score</label><input id="f_credit_score" type="number" min="300" max="850" value="${esc(String(l.credit_score||''))}"></div>
+    </div>
+    <div class="modal-f"><button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <div style="flex:1"></div>
+      <button class="btn-primary" onclick="submitLead(${id?`'${id}'`:'null'})">${id?'Save changes':'Add lead'}</button></div>
+  `);
+}
+function submitLead(id){
+  const g=k=>document.getElementById('f_'+k).value.trim();
+  const l={name:g('name'),phone:g('phone'),email:g('email'),vehicle:g('vehicle'),stock_number:g('stock_number'),
+    source:g('source'),deal_type:g('deal_type'),status:g('status'),assigned_to:g('assigned_to'),
+    credit_score:g('credit_score')?parseInt(g('credit_score'),10):null,notes:''};
+  if(!l.name){alert('Name is required');return;}
+  if(id)l.id=id;
+  saveLead(l); closeModal();
+}
+
+/* ---------------- detail drawer ---------------- */
+async function openDetail(id,keepScroll){
+  const l=state.leads.find(x=>x.id===id); if(!l)return;
+  const acts=await loadActivities(id);
+  const s=SC[l.status];const age=ageInfo(l);
+  modal(`
+    <div class="modal-h">
+      <div><h2>${esc(l.name)}</h2>
+        <div style="display:flex;gap:7px;margin-top:6px;align-items:center">
+          <span class="pill" style="background:${s.color}">${s.label}</span>
+          ${age?`<span style="color:${age.c};font-weight:600;font-size:12px">● ${age.t} in stage</span>`:''}
+        </div></div>
+      <button class="x" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-b">
+      <div class="grid2" style="margin-bottom:16px">
+        ${info('Phone',l.phone,true)}${info('Email',l.email)}
+        ${info('Vehicle',l.vehicle)}${info('Stock #',l.stock_number,true)}
+        ${info('Source',l.source)}${info('Deal',l.deal_type==='cash'?'Cash':'Finance')}
+        <div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em">Credit score</div>
+          <div style="margin-top:2px">${l.credit_score?`<span class="mono" style="font-weight:700;color:${scoreTier(l.credit_score).c}">${l.credit_score}</span> <span style="font-size:12px;color:var(--muted)">${scoreTier(l.credit_score).t}</span>`:'—'}</div></div>
+        ${info('Assigned to',l.assigned_to)}${info('Created',timeAgo(l.created_at))}
+        ${l.dc_id?info('DealerCenter ID',l.dc_id,true):''}
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+        ${STATUSES.map(st=>`<button onclick="setStatus('${id}','${st.k}');openDetail('${id}')"
+          style="padding:6px 11px;border-radius:8px;font-weight:600;font-size:12px;border:1px solid var(--line);
+          ${l.status===st.k?`background:${st.color};color:#fff;border-color:transparent`:'background:#fff;color:var(--muted)'}">${st.label}</button>`).join('')}
+      </div>
+      <div style="font-family:'Space Grotesk';font-weight:600;font-size:13px;margin-bottom:4px">Activity</div>
+      <div class="addnote">
+        <input id="noteInput" placeholder="Add a note or log a call…" onkeydown="if(event.key==='Enter')doNote('${id}')">
+        <button class="btn-primary" onclick="doNote('${id}')">Add</button>
+      </div>
+      <div class="activity">
+        ${acts.length?acts.map(a=>`<div class="act-row">
+          <div class="ai">${a.type==='call'?'📞':a.type==='status_change'?'↔':a.type==='email'?'📧':'📝'}</div>
+          <div class="ab"><div>${esc(a.body)}</div>
+          <div class="at">${esc(a.author||'')} · ${timeAgo(a.created_at)}</div></div></div>`).join(''):'<div style="color:var(--muted-2);font-size:13px;padding:12px 0">No activity yet.</div>'}
+      </div>
+    </div>
+    <div class="modal-f"><button class="btn-danger" onclick="deleteLead('${id}')">Delete</button><button class="btn-ghost" onclick="openEdit('${id}')">Edit details</button>
+      <div style="flex:1"></div>
+      <button class="btn-primary" onclick="emailOne('${id}')" ${l.email?'':'disabled style="opacity:.45;cursor:default" title="No email address on file"'}>✉ Email</button>
+      <button class="btn-ghost" onclick="closeModal()">Close</button></div>
+  `);
+}
+function info(label,val,mono){return `<div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em">${label}</div>
+  <div class="${mono?'mono':''}" style="margin-top:2px">${esc(val||'—')}</div></div>`;}
+async function deleteLead(id){
+  const l=state.leads.find(x=>x.id===id);if(!l)return;
+  if(!confirm(`Delete ${l.name||'this lead'} permanently? This cannot be undone.`))return;
+  if(LIVE){const {error}=await sb.from('leads').delete().eq('id',id);if(error)return alert('Delete error: '+error.message);}
+  state.leads=state.leads.filter(x=>x.id!==id);
+  closeModal();render();
+}
+function doNote(id){const i=document.getElementById('noteInput');addNote(id,i.value);i.value='';}
+
+/* ---------------- modal shell ---------------- */
+function modal(html){
+  let s=document.getElementById('scrim');
+  if(!s){s=document.createElement('div');s.id='scrim';s.className='scrim';
+    s.onclick=e=>{if(e.target===s)closeModal();};document.body.appendChild(s);}
+  s.innerHTML=`<div class="modal">${html}</div>`;
+}
+function closeModal(){const s=document.getElementById('scrim');if(s)s.remove();}
+
+/* ---------------- auth ---------------- */
+function renderLogin(){
+  document.getElementById('root').innerHTML=`
+  <div class="login"><div class="box">
+    <div class="mark">G</div>
+    <h1>${esc(CFG.DEALER_NAME)}</h1>
+    <p>Sign in to the leads board</p>
+    <div class="fld"><label>Email</label><input id="li_email" type="email" placeholder="you@dealer.com"></div>
+    <div class="fld"><label>Password</label><input id="li_pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-primary" onclick="doLogin()">Sign in</button>
+    <div class="err" id="li_err"></div>
+  </div></div>`;
+}
+async function doLogin(){
+  const email=document.getElementById('li_email').value.trim();
+  const password=document.getElementById('li_pass').value;
+  const {data,error}=await sb.auth.signInWithPassword({email,password});
+  if(error){document.getElementById('li_err').textContent=error.message;return;}
+  state.user={name:email.split('@')[0],email};
+  loadLeads();
+}
+async function logout(){ await sb.auth.signOut(); state.user=null; render(); }
+async function initAuth(){
+  const {data}=await sb.auth.getSession();
+  if(data.session){const e=data.session.user.email;state.user={name:e.split('@')[0],email:e};}
+}
+
+/* ---------------- DealerCenter CSV import ---------------- */
+const FIELD_MAP=[
+  {key:'dc_id',label:'DealerCenter ID',syn:['lead id','leadid','application id','app id','appid','deal id','customer id','id','dc id']},
+  {key:'name',label:'Full name',syn:['customer','customer name','name','full name','buyer','applicant']},
+  {key:'first',label:'First name',syn:['first name','firstname','first','fname']},
+  {key:'last',label:'Last name',syn:['last name','lastname','last','lname']},
+  {key:'phone',label:'Phone',syn:['phone','cell','mobile','cell phone','phone number','home phone','primary phone','contact phone']},
+  {key:'email',label:'Email',syn:['email','e mail','email address']},
+  {key:'vehicle',label:'Vehicle',syn:['vehicle','year make model','ymmt','interested vehicle','stock vehicle','desired vehicle','vehicle of interest']},
+  {key:'stock_number',label:'Stock #',syn:['stock','stock number','stock no','stk','stock num']},
+  {key:'source',label:'Source',syn:['source','lead source','lead type','origin','provider','lead provider']},
+  {key:'assigned_to',label:'Salesperson',syn:['salesperson','sales rep','sales person','assigned','assigned to','rep','sales associate','sales consultant']},
+  {key:'deal_type',label:'Deal type',syn:['deal type','finance type','cash or finance','payment type']},
+];
+const imp={headers:null,rows:null,map:{},preview:null};
+const digits=s=>(s||'').replace(/\D/g,'');
+
+function parseCSV(text){
+  const rows=[];let i=0,f='',row=[],q=false;
+  text=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  while(i<text.length){const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i+=2;continue;} q=false;i++;continue;} f+=c;i++;continue; }
+    if(c==='"'){q=true;i++;continue;}
+    if(c===','){row.push(f);f='';i++;continue;}
+    if(c==='\n'){row.push(f);rows.push(row);f='';row=[];i++;continue;}
+    f+=c;i++;
+  }
+  if(f.length||row.length){row.push(f);rows.push(row);}
+  return rows.filter(r=>r.some(x=>x.trim()!==''));
+}
+function loadSavedMap(){try{return JSON.parse(localStorage.getItem('gmc_import_map')||'null');}catch(e){return null;}}
+function saveMap(){try{const o={};Object.entries(imp.map).forEach(([k,idx])=>{if(idx!==''&&idx!=null)o[k]=imp.headers[+idx];});localStorage.setItem('gmc_import_map',JSON.stringify(o));}catch(e){}}
+function autoMap(){
+  imp.map={};
+  const norm=s=>s.toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+  const H=imp.headers.map(norm);
+  FIELD_MAP.forEach(f=>{let idx='';
+    for(let i=0;i<H.length;i++){if(f.syn.includes(H[i])){idx=String(i);break;}}
+    if(idx===''){for(let i=0;i<H.length;i++){if(f.syn.some(s=>H[i].includes(s))){idx=String(i);break;}}}
+    if(idx!=='')imp.map[f.key]=idx;});
+  const saved=loadSavedMap();
+  if(saved)Object.entries(saved).forEach(([k,name])=>{const i=imp.headers.indexOf(name);if(i>=0)imp.map[k]=String(i);});
+}
+function openImport(){
+  imp.headers=imp.rows=imp.preview=null;
+  modal(`
+   <div class="modal-h"><h2>Import from DealerCenter</h2><button class="x" onclick="closeModal()">×</button></div>
+   <div class="modal-b">
+     <p style="color:var(--muted);margin-top:0;font-size:13.5px">Drop your daily DealerCenter export (the Credit Apps report is auto-detected — no setup). New customers become fresh leads; anyone already on the board keeps their status, owner, and notes.</p>
+     <div onclick="document.getElementById('csvfile').click()" style="border:2px dashed var(--line);border-radius:12px;padding:34px;text-align:center;cursor:pointer;color:var(--muted);transition:.12s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--line)';this.style.color='var(--muted)'">
+       <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom:8px"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+       <div style="font-weight:600;color:var(--ink)">Choose export file</div>
+       <div style="font-size:12px;margin-top:3px">CSV or Excel (.xlsx) — drop it here</div>
+       <input type="file" id="csvfile" accept=".csv,.xlsx,.xls,.xlsm,text/csv" style="display:none" onchange="if(this.files[0])onFile(this.files[0])">
+     </div>
+     <div style="text-align:center;color:var(--muted-2);font-size:12px;margin:14px 0 8px">— or paste rows —</div>
+     <textarea id="csvpaste" placeholder="Paste CSV text here…" style="width:100%;min-height:70px;padding:10px;border:1px solid var(--line);border-radius:9px;font-family:'JetBrains Mono',monospace;font-size:12px;resize:vertical"></textarea>
+   </div>
+   <div class="modal-f"><button class="btn-ghost" onclick="closeModal()">Cancel</button><div style="flex:1"></div>
+     <button class="btn-primary" onclick="onPaste()">Use pasted text</button></div>`);
+  const box=document.querySelector('.modal');
+  box.ondragover=e=>{e.preventDefault();};
+  box.ondrop=e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f)onFile(f);};
+}
+function onFile(file){
+  const isX=/\.(xlsx|xls|xlsm)$/i.test(file.name);
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      if(isX){
+        const wb=XLSX.read(new Uint8Array(r.result),{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        handleRows(XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''}));
+      }else handleRows(parseCSV(r.result));
+    }catch(e){alert('Could not read that file: '+e.message);}
+  };
+  if(isX)r.readAsArrayBuffer(file);else r.readAsText(file);
+}
+function onPaste(){const t=document.getElementById('csvpaste').value;if(!t.trim())return alert('Paste some CSV text first, or choose a file.');handleRows(parseCSV(t));}
+function handleRows(rows){
+  if(!rows||rows.length<2)return alert('That file has no data rows.');
+  if(isDcCreditApps(rows)){ imp.dc=true; imp.dcLeads=dcCollapse(dcParseBlocks(rows)); return dcPreview(rows.length); }
+  imp.dc=false; imp.headers=rows[0].map(h=>String(h).trim()); imp.rows=rows.slice(1); autoMap(); showMapping();
+}
+
+/* ---- DealerCenter "Credit Apps" report parser ---- */
+const DC_LABELS=new Set(['Status','Sales Rep','Source','Type','Credit App Completed','Score','Bureau Type','Run Date','Credit App Received','Created','Sales Rep Assigned','Days Old','Last Contacted Day','Employer Name','Occupation','Length at Job','Income','Work Phone']);
+const DC_STATUS={'NEW':'new','CONTACT ATTEMPT':'contacted','CONTACTED':'contacted','WORKING DEAL':'fni','APPOINTMENT':'appt','APPT':'appt','SHOWED':'showed','SOLD':'sold','DELIVERED':'sold','FUNDED':'funded','DEAD':'lost','LOST':'lost','DUPLICATE':'__dup__'};
+const titleCase=s=>(s||'').toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase()).trim();
+function cs(c){return c===null||c===undefined?'':String(c).trim();}
+function isDcCreditApps(rows){const h=(rows[0]||[]).map(c=>cs(c).toLowerCase());return h.includes('interested vehicle')&&h.includes('lead info')&&h.includes('credit info');}
+function dcParseBlocks(rows){
+  const blocks=[];let cur=[];
+  for(let i=1;i<rows.length;i++){const r=rows[i]||[];
+    if(r.every(c=>cs(c)==='')){if(cur.length){blocks.push(cur);cur=[];}}
+    else cur.push(r);}
+  if(cur.length)blocks.push(cur);
+  return blocks.map(dcBlockToLead).filter(l=>l&&l.name);
+}
+function dcValAfter(block,label){
+  for(const r of block)for(let i=0;i<r.length;i++){
+    if(cs(r[i])===label){for(let j=i+1;j<r.length;j++){const v=cs(r[j]);if(!v)continue;if(DC_LABELS.has(v))break;return v;}return '';}}
+  return '';
+}
+function dcPhone(line){
+  if(!line)return '';
+  const parts=line.split(/C\s*:/i);
+  const grab=s=>((s||'').match(/\d[\d\s().\-]{7,}/)||[''])[0];
+  return fmtPhone(grab(parts[1])||grab(parts[0]));
+}
+function fmtPhone(s){let d=digits(s);if(d.length===11&&d[0]==='1')d=d.slice(1);if(d.length!==10)return s.trim?s.trim():'';return '('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6);}
+function dcSource(s){if(!s)return 'DealerCenter';if(s.toUpperCase().includes('OUR WEBSITE'))return 'Website';return titleCase(s.split(' - ')[0].split('/')[0].split(',')[0]);}
+function dcBlockToLead(block){
+  const colA=block.map(r=>cs(r[0])), colB=block.map(r=>cs(r[1]));
+  const name=titleCase(colA[0]);
+  const email=(colA.find(x=>x.includes('@'))||'').toLowerCase();
+  const phone=dcPhone(colA.find(x=>/H\s*:|C\s*:/i.test(x))||'');
+  const vehicle=colB[0]&&!/^\d+$/.test(colB[0])?titleCase(colB[0]):'';
+  const stk=(colB.find(x=>/Stk\s*#/i.test(x))||'').replace(/.*Stk\s*#\s*/i,'').trim();
+  const raw=dcValAfter(block,'Status').toUpperCase();
+  const scv=dcValAfter(block,'Score'); const credit_score=/^\d{3}$/.test(scv)?parseInt(scv,10):null;
+  const cd=Date.parse(dcValAfter(block,'Created')); const _created=isNaN(cd)?null:cd;
+  return {name,email,phone,vehicle,stock_number:stk,credit_score,_created,
+    source:dcSource(dcValAfter(block,'Source')),
+    assigned_to:titleCase(dcValAfter(block,'Sales Rep').split(' - ')[0]),
+    deal_type:'finance',status:DC_STATUS[raw]||'new',_dup:DC_STATUS[raw]==='__dup__',dc_id:null};
+}
+function dcCollapse(leads){
+  const rank={lost:0,new:1,contacted:2,appt:3,showed:4,fni:5,sold:6,funded:7};
+  const by={};
+  for(const l of leads){
+    const key=digits(l.phone)||l.name.toLowerCase();
+    if(!key)continue;
+    if(!by[key]){by[key]={...l,status:l._dup?'new':l.status,_dupCount:l._dup?1:0};continue;}
+    const c=by[key];
+    if(l._dup){c._dupCount++;}
+    else if((rank[l.status]??1)>(rank[c.status]??1))c.status=l.status;
+    c.vehicle=c.vehicle||l.vehicle;c.stock_number=c.stock_number||l.stock_number;
+    c.email=c.email||l.email;c.assigned_to=c.assigned_to||l.assigned_to;
+    c.credit_score=c.credit_score||l.credit_score;
+    if(l._created&&(!c._created||l._created>c._created))c._created=l._created;
+    if(c.source==='DealerCenter')c.source=l.source;
+  }
+  return Object.values(by);
+}
+function dcPreview(rawRowCount){
+  const news=[],ups=[];let dups=0;
+  imp.dcLeads.forEach(l=>{dups+=l._dupCount||0;const ex=matchExisting(l);if(ex){l._ex=ex;ups.push(l);}else news.push(l);});
+  imp.preview={news,ups,skips:[]};
+  const sample=news.slice(0,7);
+  const smap=[['New','new'],['Contacted','contact attempt'],['In F&I','working deal'],['Sold','sold / delivered'],['Funded','funded'],['Lost','dead']];
+  modal(`
+   <div class="modal-h"><h2>Review import</h2><button class="x" onclick="closeModal()">×</button></div>
+   <div class="modal-b">
+     <div style="background:var(--primary-soft);color:var(--primary-ink);border-radius:10px;padding:11px 13px;font-size:12.5px;font-weight:500;margin-bottom:16px">
+       ✓ Detected <b>DealerCenter Credit Apps</b> report — ${imp.dcLeads.length+dups} applications collapsed into <b>${imp.dcLeads.length}</b> customers (${dups} duplicate apps merged).</div>
+     <div style="display:flex;gap:10px;margin-bottom:16px">
+       ${statCard(news.length,'New leads','var(--s-funded)')}
+       ${statCard(ups.length,'Already here','var(--primary)')}
+     </div>
+     <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Status mapping: ${smap.map(m=>`<b>${m[1]}</b>→${m[0]}`).join(' · ')}. All marked Finance (credit app on file).</div>
+     ${sample.length?`<div style="font-family:'Space Grotesk';font-weight:600;font-size:13px;margin-bottom:6px">New leads preview</div>
+     <div class="tablewrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Vehicle</th><th>Score</th><th>Stage</th></tr></thead><tbody>
+       ${sample.map(l=>`<tr><td style="font-weight:600">${esc(l.name)}</td><td class="mono">${esc(l.phone||'—')}</td><td>${esc(l.vehicle||'—')}</td><td>${l.credit_score?`<span class="mono" style="font-weight:600;color:${scoreTier(l.credit_score).c}">${l.credit_score}</span>`:'—'}</td><td><span class="pill" style="background:${SC[l.status].color};font-size:10.5px">${SC[l.status].label}</span></td></tr>`).join('')}
+     </tbody></table></div>${news.length>7?`<div style="font-size:12px;color:var(--muted-2);margin-top:8px">+ ${news.length-7} more</div>`:''}`
+     :`<div style="color:var(--muted);text-align:center;padding:20px">No new customers — all already on the board.</div>`}
+   </div>
+   <div class="modal-f"><button class="btn-ghost" onclick="openImport()">Back</button><div style="flex:1"></div>
+     <button class="btn-primary" onclick="commitImport()">Import ${news.length+ups.length} lead${news.length+ups.length===1?'':'s'}</button></div>`);
+}
+function showMapping(){
+  const opts=sel=>`<option value="">— none —</option>`+imp.headers.map((h,i)=>`<option value="${i}" ${String(i)===String(sel)?'selected':''}>${esc(h)}</option>`).join('');
+  modal(`
+   <div class="modal-h"><h2>Match your columns</h2><button class="x" onclick="closeModal()">×</button></div>
+   <div class="modal-b">
+     <p style="color:var(--muted);margin-top:0;font-size:13px">We guessed the mapping from your headers — adjust anything that's off. This gets remembered for next time.</p>
+     ${FIELD_MAP.map(f=>`<div style="display:flex;align-items:center;gap:12px;margin-bottom:9px">
+       <div style="width:120px;font-size:12.5px;font-weight:600;color:var(--muted)">${f.label}</div>
+       <select onchange="imp.map['${f.key}']=this.value" style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px">${opts(imp.map[f.key])}</select>
+     </div>`).join('')}
+     <div style="font-size:12px;color:var(--muted-2);margin-top:12px">Tip: map <b>DealerCenter ID</b> if your export has a lead/application ID — it's the most reliable way to avoid duplicates. Otherwise phone number is used.</div>
+   </div>
+   <div class="modal-f"><button class="btn-ghost" onclick="openImport()">Back</button><div style="flex:1"></div>
+     <button class="btn-primary" onclick="doPreview()">Preview import →</button></div>`);
+}
+function rowVal(row,key){const idx=imp.map[key];return(idx===undefined||idx==='')?'':(row[+idx]||'').trim();}
+function buildLead(row){
+  let name=rowVal(row,'name');
+  if(!name)name=[rowVal(row,'first'),rowVal(row,'last')].filter(Boolean).join(' ');
+  const dt=rowVal(row,'deal_type').toLowerCase();
+  return {dc_id:rowVal(row,'dc_id')||null,name,phone:rowVal(row,'phone'),email:rowVal(row,'email'),
+    vehicle:rowVal(row,'vehicle'),stock_number:rowVal(row,'stock_number'),
+    source:rowVal(row,'source')||'DealerCenter',assigned_to:rowVal(row,'assigned_to'),
+    deal_type:dt.includes('cash')?'cash':'finance',status:'new'};
+}
+function matchExisting(l){
+  if(l.dc_id){const m=state.leads.find(x=>x.dc_id&&x.dc_id===l.dc_id);if(m)return m;}
+  const p=digits(l.phone);if(p.length>=10){const m=state.leads.find(x=>digits(x.phone)===p);if(m)return m;}
+  return null;
+}
+function doPreview(){
+  const news=[],ups=[],skips=[];
+  imp.rows.forEach(r=>{const l=buildLead(r);
+    if(!l.name&&!digits(l.phone)){skips.push(l);return;}
+    const ex=matchExisting(l);if(ex){l._ex=ex;ups.push(l);}else news.push(l);});
+  imp.preview={news,ups,skips};
+  const sample=news.slice(0,6);
+  modal(`
+   <div class="modal-h"><h2>Review import</h2><button class="x" onclick="closeModal()">×</button></div>
+   <div class="modal-b">
+     <div style="display:flex;gap:10px;margin-bottom:16px">
+       ${statCard(news.length,'New leads','var(--s-funded)')}
+       ${statCard(ups.length,'Already here','var(--primary)')}
+       ${statCard(skips.length,'Skipped','var(--muted)')}
+     </div>
+     ${ups.length?`<div style="font-size:12.5px;color:var(--muted);margin-bottom:14px">${ups.length} matched existing leads keep their current status &amp; owner; blank contact fields will be filled from the export.</div>`:''}
+     ${sample.length?`<div style="font-family:'Space Grotesk';font-weight:600;font-size:13px;margin-bottom:6px">New leads preview</div>
+     <div class="tablewrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Vehicle</th></tr></thead><tbody>
+       ${sample.map(l=>`<tr><td style="font-weight:600">${esc(l.name||'—')}</td><td class="mono">${esc(l.phone||'—')}</td><td>${esc(l.vehicle||'—')}</td></tr>`).join('')}
+     </tbody></table></div>${news.length>6?`<div style="font-size:12px;color:var(--muted-2);margin-top:8px">+ ${news.length-6} more</div>`:''}`
+     :`<div style="color:var(--muted);text-align:center;padding:20px">No new leads to add — everything in this file is already on the board.</div>`}
+   </div>
+   <div class="modal-f"><button class="btn-ghost" onclick="showMapping()">Back</button><div style="flex:1"></div>
+     <button class="btn-primary" onclick="commitImport()">Import ${news.length+ups.length} lead${news.length+ups.length===1?'':'s'}</button></div>`);
+}
+function statCard(n,label,color){return `<div style="flex:1;background:var(--paper);border-radius:11px;padding:14px;text-align:center">
+  <div style="font-family:'Space Grotesk';font-weight:700;font-size:26px;color:${color}">${n}</div>
+  <div style="font-size:12px;color:var(--muted);font-weight:500">${label}</div></div>`;}
+async function commitImport(){
+  const {news,ups}=imp.preview;
+  if(LIVE){
+    if(news.length){const payload=news.map(l=>{const o={dc_id:l.dc_id,name:l.name,phone:l.phone,email:l.email,vehicle:l.vehicle,stock_number:l.stock_number,source:l.source,assigned_to:l.assigned_to,deal_type:l.deal_type,credit_score:l.credit_score||null,status:l.status||'new'};
+        if(l._created){const iso=new Date(l._created).toISOString();o.created_at=iso;o.stage_changed_at=iso;} return o;});
+      const {error}=await sb.from('leads').insert(payload);if(error)return alert('Import error: '+error.message);}
+    for(const l of ups){const ex=l._ex;
+      await sb.from('leads').update({phone:ex.phone||l.phone,email:ex.email||l.email,vehicle:ex.vehicle||l.vehicle,stock_number:ex.stock_number||l.stock_number,dc_id:ex.dc_id||l.dc_id,assigned_to:ex.assigned_to||l.assigned_to,credit_score:ex.credit_score||l.credit_score||null}).eq('id',ex.id);}
+  }else{
+    news.forEach(l=>{l.id='d'+Date.now()+Math.random().toString(36).slice(2,6);l.status=l.status||'new';const iso=l._created?new Date(l._created).toISOString():new Date().toISOString();l.created_at=l.stage_changed_at=iso;l._acts=[];delete l._ex;state.leads.push(l);});
+    ups.forEach(l=>{const ex=l._ex;ex.phone=ex.phone||l.phone;ex.email=ex.email||l.email;ex.vehicle=ex.vehicle||l.vehicle;ex.stock_number=ex.stock_number||l.stock_number;ex.dc_id=ex.dc_id||l.dc_id;ex.assigned_to=ex.assigned_to||l.assigned_to;ex.credit_score=ex.credit_score||l.credit_score;});
+  }
+  saveMap();closeModal();await loadLeads();
+  toast(`Imported ${news.length} new · refreshed ${ups.length} existing`);
+}
+function toast(msg){const t=document.createElement('div');t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--asphalt);color:#fff;padding:11px 18px;border-radius:10px;font-weight:600;font-size:13px;box-shadow:var(--shadow-lg);z-index:100';
+  document.body.appendChild(t);setTimeout(()=>t.remove(),2800);}
+
+/* ---------------- demo data ---------------- */
+const now=Date.now(), day=864e5;
+const DEMO=[
+  {id:'d1',name:'Marcus Johnson',phone:'813-555-0142',email:'mjohnson@gmail.com',vehicle:'2020 Ford F-150 XLT',stock_number:'GM4471',source:'Website',status:'new',deal_type:'finance',assigned_to:'Rami Saleh',notes:'',created_at:new Date(now-1*day).toISOString(),stage_changed_at:new Date(now-0.2*day).toISOString(),_acts:[]},
+  {id:'d2',name:'Latoya Williams',phone:'813-555-0198',email:'',vehicle:'2019 Honda Civic',stock_number:'GM4402',source:'Facebook',status:'new',deal_type:'finance',assigned_to:'',notes:'',created_at:new Date(now-3*day).toISOString(),stage_changed_at:new Date(now-3*day).toISOString(),_acts:[]},
+  {id:'d3',name:'David Chen',phone:'813-555-0177',email:'dchen@yahoo.com',vehicle:'2021 Toyota Camry SE',stock_number:'GM4510',source:'Cars.com',status:'contacted',deal_type:'finance',assigned_to:'Rami Saleh',notes:'Left VM, texting back tonight',created_at:new Date(now-2*day).toISOString(),stage_changed_at:new Date(now-1*day).toISOString(),_acts:[{author:'Rami Saleh',type:'call',body:'Called, left voicemail',created_at:new Date(now-1*day).toISOString()}]},
+  {id:'d4',name:'Angela Ruiz',phone:'813-555-0130',email:'aruiz@gmail.com',vehicle:'2018 Nissan Rogue',stock_number:'GM4388',source:'Referral',status:'contacted',deal_type:'cash',assigned_to:'Mike T',notes:'',created_at:new Date(now-6*day).toISOString(),stage_changed_at:new Date(now-6*day).toISOString(),_acts:[]},
+  {id:'d5',name:'James Patterson',phone:'813-555-0155',email:'',vehicle:'2022 Jeep Grand Cherokee',stock_number:'GM4525',source:'Walk-in',status:'appt',deal_type:'finance',assigned_to:'Mike T',notes:'Coming Sat 2pm',created_at:new Date(now-4*day).toISOString(),stage_changed_at:new Date(now-1*day).toISOString(),_acts:[{author:'Mike T',type:'note',body:'Appt booked Saturday 2pm, bringing spouse',created_at:new Date(now-1*day).toISOString()}]},
+  {id:'d6',name:'Priya Nair',phone:'813-555-0166',email:'pnair@outlook.com',vehicle:'2020 Mazda CX-5',stock_number:'GM4499',source:'Website',status:'showed',deal_type:'finance',assigned_to:'Rami Saleh',notes:'Test drove, loved it',created_at:new Date(now-5*day).toISOString(),stage_changed_at:new Date(now-2*day).toISOString(),_acts:[]},
+  {id:'d7',name:'Robert Kline',phone:'813-555-0121',email:'',vehicle:'2019 Chevy Silverado',stock_number:'GM4360',source:'Phone Up',status:'fni',deal_type:'finance',assigned_to:'Rami Saleh',notes:'Submitted to lenders, waiting on approval',created_at:new Date(now-7*day).toISOString(),stage_changed_at:new Date(now-1*day).toISOString(),_acts:[{author:'Rami Saleh',type:'note',body:'Submitted to Westlake + Capital One',created_at:new Date(now-1*day).toISOString()}]},
+  {id:'d8',name:'Tanya Brooks',phone:'813-555-0109',email:'tbrooks@gmail.com',vehicle:'2021 Kia Sorento',stock_number:'GM4480',source:'DealerCenter',status:'funded',deal_type:'finance',assigned_to:'Mike T',notes:'Funded via Ally',created_at:new Date(now-12*day).toISOString(),stage_changed_at:new Date(now-2*day).toISOString(),_acts:[]},
+  {id:'d9',name:'Kevin Osei',phone:'813-555-0188',email:'',vehicle:'2017 BMW 3 Series',stock_number:'GM4299',source:'CarGurus',status:'lost',deal_type:'finance',assigned_to:'',notes:'Bought elsewhere',created_at:new Date(now-15*day).toISOString(),stage_changed_at:new Date(now-5*day).toISOString(),_acts:[]},
+];
+
+/* ---------------- boot ---------------- */
+(async function(){
+  if(LIVE){ await initAuth(); }
+  GMC.init({
+    sb, LIVE, recordType:'lead', config:CFG,
+    getUserName:userName,
+    // refresh the list behind the modal; the results screen stays up
+    onSent:()=>renderContent()
+  });
+  await loadLeads();
+})();
+</script>
+</body>
+</html>

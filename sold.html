@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Giant Motor Cars — Sold Customers</title>
+
+<!-- ============================================================
+     CONFIG — paste Supabase values to go live (can be the SAME
+     project as the leads app). Blank = local Demo mode.
+     ============================================================ -->
+<script>
+  window.SOLD_CONFIG = {
+    SUPABASE_URL:      "https://rnxjiiceacpdswlvjfwp.supabase.co",
+    SUPABASE_ANON_KEY: "sb_publishable_mTvsidLyuX3m_Q_Ma-KmJw_PgTH5hcZ",
+    LEADS_URL:         "index.html",   // link to the Leads page
+    DEALER_NAME:       "Giant Motor Cars",
+    DEALER_PHONE:      "813-222-0010",
+
+    // ---- Email (Gmail) -------------------------------------
+    // Paste the OAuth client ID from Google Cloud here. Steps: gmail-setup.md
+    GOOGLE_CLIENT_ID:  "227059275402-tuk4q9f57sc30kioj57f1t2c7fbnhqjh.apps.googleusercontent.com",
+    // Shown in the footer of every email — CAN-SPAM requires a physical address
+    DEALER_ADDRESS:    "2004 E Dr Martin Luther King Jr Blvd, Tampa, FL 33610"
+  };
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --asphalt:#14171C; --asphalt-2:#1B1F27; --asphalt-3:#242A34;
+  --ink:#0F1115; --muted:#6B7280; --muted-2:#9AA3AF;
+  --paper:#F4F5F7; --card:#FFFFFF; --line:#E4E7EC; --line-2:#EDEFF3;
+  --primary:#047857; --primary-ink:#065F46; --primary-soft:#E7F6F0;
+  --shadow:0 1px 2px rgba(16,17,21,.04),0 4px 16px rgba(16,17,21,.06);
+  --shadow-lg:0 12px 40px rgba(16,17,21,.18);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:14px}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+
+.app{display:grid;grid-template-columns:230px 1fr;height:100vh;overflow:hidden}
+.side{background:var(--asphalt);color:#fff;display:flex;flex-direction:column;padding:20px 14px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px}
+.brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#10B981);display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:17px;color:#fff;flex:none}
+.brand .bn{font-family:'Space Grotesk';font-weight:600;font-size:15px;line-height:1.15}
+.brand .bn small{display:block;font-family:'Inter';font-weight:400;font-size:11px;color:var(--muted-2)}
+.appsw{display:flex;gap:4px;background:var(--asphalt-2);border-radius:10px;padding:4px;margin:0 8px 14px}
+.appsw a{flex:1;text-align:center;padding:7px 8px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--muted-2);text-decoration:none;transition:.12s;cursor:pointer}
+.appsw a:hover{color:#fff}
+.appsw a.on{background:var(--asphalt-3);color:#fff}
+.side .stat{background:var(--asphalt-2);border-radius:11px;padding:12px 13px;margin-bottom:9px}
+.side .stat .n{font-family:'Space Grotesk';font-weight:700;font-size:22px}
+.side .stat .l{font-size:11.5px;color:var(--muted-2);font-weight:500}
+.side-foot{margin-top:auto;padding:12px 8px 2px;border-top:1px solid var(--asphalt-3)}
+.side-foot .u{display:flex;align-items:center;gap:9px;font-size:13px}
+.side-foot .av{width:28px;height:28px;border-radius:50%;background:var(--primary);display:grid;place-items:center;font-weight:600;font-size:12px;color:#fff;flex:none}
+.side-foot .lo{color:var(--muted-2);font-size:12px;margin-top:8px}
+.side-foot .lo:hover{color:#fff}
+
+.main{display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:12px;padding:16px 24px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.topbar h1{font-family:'Space Grotesk';font-size:19px;font-weight:600;margin:0}
+.search{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:0 12px;height:38px;min-width:240px}
+.search input{border:none;background:none;outline:none;width:100%;color:var(--ink)}
+.search svg{color:var(--muted);flex:none}
+.spacer{flex:1}
+.filter{height:38px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-weight:500;max-width:170px}
+.btn-primary{height:38px;padding:0 16px;background:var(--primary);color:#fff;border-radius:10px;font-weight:600;display:flex;align-items:center;gap:7px;transition:.12s}
+.btn-primary:hover{background:var(--primary-ink)}
+.btn-ghost{height:38px;padding:0 16px;border:1px solid var(--line);border-radius:10px;font-weight:600;color:var(--muted)}
+.btn-ghost:hover{background:var(--paper);color:var(--ink)}
+.btn-danger{height:38px;padding:0 16px;border:1px solid #FCA5A5;border-radius:10px;font-weight:600;color:#B91C1C;background:#fff}
+.btn-danger:hover{background:#FEF2F2}
+.demo-flag{background:#FEF3C7;color:#92400E;font-weight:600;font-size:12.5px;padding:7px 24px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #FDE68A}
+
+.content{flex:1;overflow:auto;padding:20px 24px}
+.tablewrap{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600;padding:12px 16px;background:var(--paper);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:13px 16px;border-bottom:1px solid var(--line-2);font-size:13.5px;vertical-align:top}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FAFBFC;cursor:pointer}
+.badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--line-2);color:var(--muted);display:inline-block}
+.badge.sc{background:var(--primary-soft);color:var(--primary-ink)}
+.badge.co{background:#EEF2FF;color:#4338CA}
+.badge.type{background:#F1F5F9;color:#475569}
+.badge.recourse{background:#FEF2F2;color:#B91C1C}
+.toggle{height:38px;padding:0 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.toggle:hover{border-color:#FCA5A5;color:#B91C1C}
+.toggle.on{background:#FEF2F2;border-color:#FCA5A5;color:#B91C1C}
+
+.scrim{position:fixed;inset:0;background:rgba(15,17,21,.5);backdrop-filter:blur(2px);display:grid;place-items:center;padding:20px;z-index:50;animation:fade .15s}
+@keyframes fade{from{opacity:0}}
+.modal{background:var(--card);border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow:auto;box-shadow:var(--shadow-lg);animation:pop .18s}
+@keyframes pop{from{transform:translateY(8px) scale(.98);opacity:.6}}
+.modal-h{display:flex;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:1}
+.modal-h h2{font-family:'Space Grotesk';font-size:17px;margin:0}
+.modal-h .x{margin-left:auto;color:var(--muted);width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-size:20px}
+.modal-h .x:hover{background:var(--paper);color:var(--ink)}
+.modal-b{padding:20px 22px}
+.modal-f{display:flex;gap:10px;padding:16px 22px;border-top:1px solid var(--line);position:sticky;bottom:0;background:#fff}
+.sec{font-family:'Space Grotesk';font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:18px 0 8px}
+.sec:first-child{margin-top:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+.kv .k{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.kv .v{margin-top:2px}
+
+.statc{flex:1;background:var(--paper);border-radius:11px;padding:14px;text-align:center}
+.statc .n{font-family:'Space Grotesk';font-weight:700;font-size:26px}
+.statc .l{font-size:12px;color:var(--muted);font-weight:500}
+
+.login{height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,#1B1F27,#0C0E12)}
+.login .box{background:#fff;border-radius:18px;padding:34px 30px;width:360px;box-shadow:var(--shadow-lg)}
+.login .mark{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--primary),#10B981);display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:22px;color:#fff;margin-bottom:16px}
+.login h1{font-family:'Space Grotesk';font-size:21px;margin:0 0 4px}
+.login p{color:var(--muted);margin:0 0 22px;font-size:13.5px}
+.login .fld{margin-bottom:13px}
+.login label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.login input{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;outline:none}
+.login input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.login .btn-primary{width:100%;justify-content:center;height:42px;margin-top:6px}
+.login .err{color:#DC2626;font-size:13px;margin-top:12px;min-height:18px}
+
+.sorth{cursor:pointer;user-select:none}
+.selbar{display:flex;align-items:center;gap:10px;background:var(--primary-soft);border:1px solid #A7F3D0;border-radius:11px;padding:9px 14px;margin-bottom:12px;font-size:13.5px}
+.selbar span{margin-right:auto}
+@media(max-width:760px){.app{grid-template-columns:1fr}.side{display:none}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="messaging.js"></script>
+<script src="messaging-ui.js"></script>
+<script>
+/* ============================================================
+   Giant Motor Cars — Sold Customers (Frazer)
+   ============================================================ */
+const CFG=window.SOLD_CONFIG;
+const LIVE=!!(CFG.SUPABASE_URL&&CFG.SUPABASE_ANON_KEY);
+let sb=LIVE?supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY):null;
+
+const state={user:null,q:'',fType:'',fSC:'',fLien:'',fMonth:'',fRecourse:false,fTag:'',advFilters:[],selected:new Set(),sort:{key:'sale_date',dir:'desc'},rows:[]};
+
+/* ---------- data ---------- */
+async function load(){
+  if(LIVE){
+    let all=[],from=0;const page=1000;
+    while(true){
+      const {data,error}=await sb.from('sold_customers').select('*').order('sale_date',{ascending:false}).range(from,from+page-1);
+      if(error){alert('Load error: '+error.message);return;}
+      all=all.concat(data||[]);
+      if(!data||data.length<page)break;
+      from+=page;
+    }
+    state.rows=all;
+  }
+  else state.rows=DEMO.slice();
+  render();
+}
+
+/* ---------- helpers ---------- */
+function userName(){return state.user?.name||'You';}
+function initials(n){return (n||'?').split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const digits=s=>(s||'').replace(/\D/g,'');
+function fullName(r){return [r.first_name,r.last_name].filter(Boolean).join(' ');}
+function vehicle(r){return [r.veh_year,r.veh_make,r.veh_model].filter(Boolean).join(' ');}
+function fmtDate(d){if(!d)return '';const t=Date.parse(d);if(isNaN(t))return d;const x=new Date(t);return (x.getUTCMonth()+1)+'/'+x.getUTCDate()+'/'+x.getUTCFullYear();}
+function monthKey(d){if(!d)return '';const t=Date.parse(d);if(isNaN(t))return '';const x=new Date(t);return x.getUTCFullYear()+'-'+String(x.getUTCMonth()+1).padStart(2,'0');}
+function monthLabel(k){if(!k)return '';const [y,m]=k.split('-');return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]+' '+y;}
+function hasSC(r){return (r.service_contract&&/^y/i.test(r.service_contract))||!!r.service_contract_company;}
+function hasCo(r){return !!(r.cobuyer_first||r.cobuyer_last);}
+// Lienholders where a missed 1st payment is charged back to the dealer (recourse)
+const RECOURSE=['westlake','agora','strike acceptance','shoreham','veros'];
+function isRecourse(r){const l=(r.lien_holder||'').toLowerCase();return !!l&&RECOURSE.some(k=>l.includes(k));}
+const ADV_FIELDS=[
+ {k:'first_name',l:'First name'},{k:'last_name',l:'Last name'},{k:'cell_phone',l:'Cell phone'},{k:'home_phone',l:'Home phone'},{k:'email',l:'Email'},
+ {k:'sale_date',l:'Sale date'},{k:'sale_type',l:'Type of sale'},{k:'veh_year',l:'Vehicle year'},{k:'veh_make',l:'Vehicle make'},{k:'veh_model',l:'Vehicle model'},
+ {k:'vin',l:'VIN'},{k:'vin_last6',l:'Last 6 VIN'},{k:'first_payment_date',l:'1st payment date'},{k:'note_payment_amount',l:'Payment amount'},
+ {k:'pay_schedule',l:'Pay schedule'},{k:'num_payments',l:'Number of payments'},{k:'current_due_date',l:'Current date due'},{k:'service_contract',l:'Service contract'},{k:'service_contract_company',l:'SC company'},
+ {k:'lien_holder',l:'Lienholder'},{k:'cobuyer_first',l:'Co-buyer first'},{k:'cobuyer_last',l:'Co-buyer last'},{k:'cobuyer_email',l:'Co-buyer email'},
+ {k:'tag_in',l:'Tag in (yes/no)'},{k:'tag_cost',l:'Tag cost'},{k:'tag_number',l:'Tag number'}];
+function advVal(r,key){if(key==='tag_in')return r.tag_in?'yes':'no';const v=r[key];return v==null?'':String(v);}
+function matchAdv(r,f){const v=advVal(r,f.field).toLowerCase(),q=(f.value||'').toLowerCase();
+  switch(f.op){case 'contains':return v.includes(q);case 'equals':return v===q;case 'not_equals':return v!==q;case 'empty':return v==='';case 'not_empty':return v!=='';default:return true;}}
+function fmtPhone(s){let d=digits(s);if(d.length===11&&d[0]==='1')d=d.slice(1);if(d.length!==10)return s||'';return '('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6);}
+/* Frazer writes amounts as "389.42", "$389.42", "1,234.56" or "(50.00)" for negatives. */
+function toMoney(v){
+  if(v==null)return null;
+  let s=String(v).trim();
+  if(!s)return null;
+  const neg=/^\(.*\)$/.test(s);
+  s=s.replace(/[()]/g,'').replace(/[^0-9.\-]/g,'');
+  if(!s||s==='-'||s==='.')return null;
+  const n=parseFloat(s);
+  if(isNaN(n))return null;
+  return Math.round((neg?-n:n)*100)/100;
+}
+const MONEY_FMT=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
+function fmtMoney(v){const n=toMoney(v);return n==null?'':MONEY_FMT.format(n);}
+function toInt(v){if(v==null)return null;const s=String(v).replace(/[^0-9\-]/g,'');if(!s||s==='-')return null;const n=parseInt(s,10);return isNaN(n)?null:n;}
+/* "Weekly"/"Bi-Weekly"/"Monthly" — used in sentences, so lowercase it. */
+function schedWord(s){const v=String(s||'').trim().toLowerCase();
+  if(!v)return '';
+  if(/bi.?week|every other week|semi.?month/.test(v))return 'bi-weekly';
+  if(/week/.test(v))return 'weekly';
+  if(/month/.test(v))return 'monthly';
+  if(/semi.?month|twice/.test(v))return 'semi-monthly';
+  return v;}
+function bestPhone(r){return fmtPhone(r.cell_phone||r.home_phone);}
+
+function distinct(fn){return [...new Set(state.rows.map(fn).filter(Boolean))].sort();}
+function months(){return [...new Set(state.rows.map(r=>monthKey(r.sale_date)).filter(Boolean))].sort().reverse();}
+
+function filtered(){
+  const q=state.q.toLowerCase();
+  return state.rows.filter(r=>{
+    if(state.fType&&r.sale_type!==state.fType)return false;
+    if(state.fSC==='yes'&&!hasSC(r))return false;
+    if(state.fSC==='no'&&hasSC(r))return false;
+    if(state.fLien&&r.lien_holder!==state.fLien)return false;
+    if(state.fMonth&&monthKey(r.sale_date)!==state.fMonth)return false;
+    if(state.fRecourse&&!isRecourse(r))return false;
+    if(state.fTag==='pending'&&r.tag_in)return false;
+    if(state.fTag==='in'&&!r.tag_in)return false;
+    if(state.advFilters.length&&!state.advFilters.every(f=>matchAdv(r,f)))return false;
+    if(q){const hay=[fullName(r),r.cell_phone,r.home_phone,r.email,vehicle(r),r.vin,r.vin_last6,r.lien_holder,fullName({first_name:r.cobuyer_first,last_name:r.cobuyer_last})].join(' ').toLowerCase();
+      if(!hay.includes(q))return false;}
+    return true;
+  });
+}
+
+/* ---------- render ---------- */
+function contentHTML(){
+  const rows=filtered();
+  let bar='';
+  if(state.selected.size){
+    const withEmail=state.rows.filter(r=>state.selected.has(r.id)&&r.email&&!r.email_opt_out).length;
+    bar=`<div class="selbar"><span><b>${state.selected.size}</b> selected</span>
+    <button class="btn-primary" style="height:32px" onclick="emailSelected()">
+      ✉ Email ${withEmail||''} ${withEmail===1?'customer':'customers'}</button>
+    <button class="btn-ghost" style="height:32px" onclick="exportCSV('selected')">Export selected</button>
+    <button class="btn-ghost" style="height:32px" onclick="clearSel()">Clear</button></div>`;}
+  return bar+table(rows);
+}
+function renderContent(){const el=document.getElementById('content');if(el)el.innerHTML=contentHTML();}
+function toggleSel(id,e){e.stopPropagation();if(state.selected.has(id))state.selected.delete(id);else state.selected.add(id);renderContent();}
+function toggleSelAll(e){e.stopPropagation();const rows=filtered();const all=rows.length&&rows.every(r=>state.selected.has(r.id));
+  if(all)rows.forEach(r=>state.selected.delete(r.id));else rows.forEach(r=>state.selected.add(r.id));renderContent();}
+function clearSel(){state.selected.clear();renderContent();}
+
+/* ---------- email ---------- */
+function emailSelected(){
+  const recs=state.rows.filter(r=>state.selected.has(r.id));
+  if(!recs.length)return;
+  GMCUI.openCompose(recs);
+}
+function emailOne(idx){
+  const r=state.rows[idx];if(!r)return;
+  if(!r.email)return alert(`${fullName(r)||'This customer'} has no email address on file.`);
+  GMCUI.openCompose([r]);
+}
+function render(){
+  if(LIVE&&!state.user)return renderLogin();
+  const rows=filtered();
+  const now=new Date();const thisMonth=now.getUTCFullYear()+'-'+String(now.getUTCMonth()+1).padStart(2,'0');
+  const mCount=state.rows.filter(r=>monthKey(r.sale_date)===thisMonth).length;
+  const yCount=state.rows.filter(r=>monthKey(r.sale_date).startsWith(String(now.getUTCFullYear()))).length;
+  const scRate=state.rows.length?Math.round(100*state.rows.filter(hasSC).length/state.rows.length):0;
+  const recCount=state.rows.filter(isRecourse).length;
+
+  document.getElementById('root').innerHTML=`
+  <div class="app">
+    <aside class="side">
+      <div class="brand"><div class="mark">G</div>
+        <div class="bn">${esc(CFG.DEALER_NAME)}<small>Sold Customers</small></div></div>
+      <div class="appsw">
+        <a href="${esc(CFG.LEADS_URL||'index.html')}">Leads</a>
+        <a class="on">Sold</a>
+      </div>
+      <div class="stat"><div class="n">${state.rows.length}</div><div class="l">Total sold</div></div>
+      <div class="stat"><div class="n">${mCount}</div><div class="l">Sold this month</div></div>
+      <div class="stat"><div class="n">${yCount}</div><div class="l">Sold this year</div></div>
+      <div class="stat"><div class="n">${scRate}%</div><div class="l">Service contract attach</div></div>
+      <div class="stat" style="cursor:pointer" onclick="state.fRecourse=!state.fRecourse;render()"><div class="n" style="color:#F87171">${recCount}</div><div class="l">1st-payment recourse</div></div>
+      <div class="side-foot"><div class="u"><div class="av">${initials(userName())}</div>
+        <div style="font-weight:600">${esc(userName())}</div></div>
+        ${LIVE?`<div class="lo" onclick="logout()">Sign out</div>`:''}</div>
+    </aside>
+    <div class="main">
+      <div class="topbar">
+        <h1>Sold Customers</h1>
+        <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+          <input placeholder="Search name, VIN, phone, lienholder…" value="${esc(state.q)}" oninput="state.q=this.value;renderContent()"></div>
+        <select class="filter" onchange="state.fMonth=this.value;render()"><option value="">All months</option>${months().map(m=>`<option value="${m}" ${state.fMonth===m?'selected':''}>${monthLabel(m)}</option>`).join('')}</select>
+        <select class="filter" onchange="state.fType=this.value;render()"><option value="">All sale types</option>${distinct(r=>r.sale_type).map(t=>`<option ${state.fType===t?'selected':''}>${esc(t)}</option>`).join('')}</select>
+        <select class="filter" onchange="state.fLien=this.value;render()"><option value="">All lienholders</option>${distinct(r=>r.lien_holder).map(t=>`<option ${state.fLien===t?'selected':''}>${esc(t)}</option>`).join('')}</select>
+        <select class="filter" onchange="state.fSC=this.value;render()"><option value="">Service contract: all</option><option value="yes" ${state.fSC==='yes'?'selected':''}>Has contract</option><option value="no" ${state.fSC==='no'?'selected':''}>No contract</option></select>
+        <select class="filter" onchange="state.fTag=this.value;render()"><option value="">Tag: all</option><option value="pending" ${state.fTag==='pending'?'selected':''}>Tag pending</option><option value="in" ${state.fTag==='in'?'selected':''}>Tag in</option></select>
+        <button class="toggle ${state.fRecourse?'on':''}" onclick="state.fRecourse=!state.fRecourse;render()" title="Show only recourse lienholders (Westlake, Agora, Strike, Shoreham, Veros)">⚑ 1st-Pmt Recourse</button>
+        <div class="spacer"></div>
+        <button class="btn-ghost" onclick="openAdvFilter()">⚙ Filter${state.advFilters.length?` (${state.advFilters.length})`:''}</button>
+        <button class="btn-ghost" onclick="GMCUI.openTemplates()">✉ Templates</button>
+        <button class="btn-ghost" onclick="exportCSV('filtered')">Export</button>
+        <button class="btn-primary" onclick="openImport()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Import from Frazer</button>
+      </div>
+      ${LIVE?'':'<div class="demo-flag">● Demo mode — sample data, resets on refresh. Add Supabase keys in the file to go live.</div>'}
+      <div class="content" id="content">${contentHTML()}</div>
+    </div>
+  </div>`;
+}
+
+function sortVal(r,k){switch(k){
+  case 'name':return (r.last_name+' '+r.first_name).toLowerCase();
+  case 'vehicle':return vehicle(r).toLowerCase();
+  case 'sale_date':return Date.parse(r.sale_date)||0;
+  case 'type':return (r.sale_type||'').toLowerCase();
+  case 'payment':return Date.parse(r.first_payment_date)||0;
+  case 'sc':return hasSC(r)?1:0;
+  case 'lien':return (r.lien_holder||'').toLowerCase();
+  case 'tag':return r.tag_in?1:0;
+  default:return 0;
+}}
+function setSort(k){const s=state.sort;if(s.key===k)s.dir=s.dir==='asc'?'desc':'asc';else{s.key=k;s.dir=(k==='sale_date'||k==='payment'||k==='sc')?'desc':'asc';}render();}
+function table(rows){
+  if(!rows.length)return `<div style="text-align:center;color:var(--muted);padding:60px">No sold customers yet. Click <b>Import from Frazer</b> to load your sales.</div>`;
+  const {key,dir}=state.sort,mul=dir==='asc'?1:-1;
+  const sorted=[...rows].sort((a,b)=>{const av=sortVal(a,key),bv=sortVal(b,key);return av<bv?-mul:av>bv?mul:0;});
+  const arw=k=>state.sort.key===k?`<span style="color:var(--primary)"> ${state.sort.dir==='asc'?'▲':'▼'}</span>`:'<span style="color:var(--line)"> ⇅</span>';
+  const th=(k,l)=>`<th class="sorth" onclick="setSort('${k}')">${l}${arw(k)}</th>`;
+  const allSel=rows.length&&rows.every(r=>state.selected.has(r.id));
+  return `<div class="tablewrap"><table>
+    <thead><tr><th style="width:34px"><input type="checkbox" ${allSel?'checked':''} onclick="toggleSelAll(event)" style="accent-color:var(--primary);cursor:pointer"></th>${th('name','Customer')}${th('vehicle','Vehicle')}${th('sale_date','Sale Date')}${th('type','Type')}${th('payment','1st Payment')}${th('sc','Service Contract')}${th('lien','Lienholder')}${th('tag','Tag')}</tr></thead>
+    <tbody>${sorted.map((r,i)=>`<tr onclick="openDetail(${state.rows.indexOf(r)})">
+      <td onclick="event.stopPropagation()"><input type="checkbox" ${state.selected.has(r.id)?'checked':''} onclick="toggleSel('${r.id}',event)" style="accent-color:var(--primary);cursor:pointer"></td>
+      <td><div style="font-weight:600">${esc(fullName(r))||'—'} ${hasCo(r)?'<span class="badge co">+ co-buyer</span>':''}</div>
+        <div class="mono" style="color:var(--muted);font-size:12px">${esc(bestPhone(r))}</div></td>
+      <td>${esc(vehicle(r))||'—'}<div class="mono" style="color:var(--muted);font-size:12px">${r.vin_last6?'…'+esc(r.vin_last6):(r.vin?esc(r.vin):'')}</div></td>
+      <td class="mono">${esc(fmtDate(r.sale_date))||'—'}</td>
+      <td>${r.sale_type?`<span class="badge type">${esc(r.sale_type)}</span>`:'—'}</td>
+      <td class="mono">${esc(fmtDate(r.first_payment_date))||'—'}${r.note_payment_amount!=null&&r.note_payment_amount!==''?`<div style="color:var(--muted);font-size:12px">${esc(fmtMoney(r.note_payment_amount))}${r.pay_schedule?' '+esc(schedWord(r.pay_schedule)):''}</div>`:''}</td>
+      <td>${hasSC(r)?`<span class="badge sc">${esc(r.service_contract_company||'Yes')}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+      <td>${esc(r.lien_holder)||'<span style="color:var(--muted)">Cash / BHPH</span>'}${isRecourse(r)?' <span class="badge recourse">Recourse</span>':''}</td>
+      <td>${r.tag_in?'<span style="color:#059669;font-weight:600">✓ In</span>':'<span style="color:#D97706;font-weight:600">Pending</span>'}${r.tag_number?`<div class="mono" style="color:var(--muted);font-size:12px">${esc(r.tag_number)}</div>`:''}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+
+/* ---------- detail ---------- */
+function openDetail(idx){
+  const r=state.rows[idx];if(!r)return;
+  const kv=(k,v,mono)=>`<div class="kv"><div class="k">${k}</div><div class="v ${mono?'mono':''}">${esc(v)||'—'}</div></div>`;
+  modal(`
+    <div class="modal-h"><div><h2>${esc(fullName(r))||'—'}</h2>
+      <div style="font-size:12.5px;color:var(--muted);margin-top:3px">${esc(vehicle(r))} ${r.vin?'· '+esc(r.vin):''}</div></div>
+      <button class="x" onclick="closeModal()">×</button></div>
+    <div class="modal-b">
+      <div class="sec">Buyer</div>
+      <div class="grid2">${kv('Cell phone',fmtPhone(r.cell_phone),1)}${kv('Home phone',fmtPhone(r.home_phone),1)}${kv('Email',r.email)}</div>
+      <div class="sec">Sale</div>
+      <div class="grid2">${kv('Sale date',fmtDate(r.sale_date),1)}${kv('Type of sale',r.sale_type)}${kv('1st payment',fmtDate(r.first_payment_date),1)}
+        ${kv('Payment amount',fmtMoney(r.note_payment_amount),1)}${kv('Pay schedule',r.pay_schedule)}${kv('Number of payments',r.num_payments,1)}${kv('Current date due',fmtDate(r.current_due_date),1)}${kv('Lienholder',r.lien_holder)}
+        <div class="kv"><div class="k">1st-pmt recourse</div><div class="v" style="${isRecourse(r)?'color:#B91C1C;font-weight:600':''}">${isRecourse(r)?'Yes ⚑':'No'}</div></div>
+        ${kv('Service contract',hasSC(r)?(r.service_contract_company||'Yes'):'No')}${kv('SC company',r.service_contract_company)}</div>
+      <div class="sec">Vehicle</div>
+      <div class="grid2">${kv('Year',r.veh_year,1)}${kv('Make',r.veh_make)}${kv('Model',r.veh_model)}${kv('VIN',r.vin,1)}${kv('Last 6',r.vin_last6,1)}</div>
+      ${hasCo(r)?`<div class="sec">Co-buyer</div>
+      <div class="grid2">${kv('Name',[r.cobuyer_first,r.cobuyer_last].filter(Boolean).join(' '))}${kv('Home phone',fmtPhone(r.cobuyer_home_phone),1)}${kv('Email',r.cobuyer_email)}</div>`:''}
+      <div class="sec">Tag / Registration</div>
+      <div class="grid2">
+        <div class="kv"><div class="k">Tag in?</div><label style="display:flex;align-items:center;gap:8px;margin-top:5px;font-weight:500;cursor:pointer"><input type="checkbox" id="ed_tag_in" ${r.tag_in?'checked':''} style="width:16px;height:16px;accent-color:var(--primary)"> Received</label></div>
+        <div class="kv"><div class="k">Tag cost</div><input id="ed_tag_cost" value="${esc(r.tag_cost==null?'':r.tag_cost)}" placeholder="$0.00" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;outline:none;margin-top:3px"></div>
+        <div class="kv"><div class="k">Tag number</div><input id="ed_tag_number" value="${esc(r.tag_number||'')}" placeholder="Plate #" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;outline:none;margin-top:3px"></div>
+      </div>
+      <div class="sec">Emails</div>
+      <div id="gmcHist" style="color:var(--muted);font-size:13px">Loading…</div>
+    </div>
+    <div class="modal-f"><button class="btn-danger" onclick="deleteSold(${idx})">Delete</button><button class="btn-primary" onclick="saveTag(${idx})">Save tag info</button><div style="flex:1"></div>
+      <button class="btn-ghost" onclick="emailOne(${idx})" ${r.email?'':'disabled style="opacity:.45;cursor:default" title="No email address on file"'}>✉ Email</button>
+      <button class="btn-ghost" onclick="closeModal()">Close</button></div>`);
+  if(LIVE) GMCUI.historyHtml(r.id).then(h=>{const el=document.getElementById('gmcHist');if(el)el.innerHTML=h;});
+  else {const el=document.getElementById('gmcHist');if(el)el.textContent='Email history appears here once you go live.';}
+}
+async function deleteSold(idx){
+  const r=state.rows[idx];if(!r)return;
+  if(!confirm(`Delete ${fullName(r)||'this record'} permanently? This cannot be undone.`))return;
+  if(LIVE){const {error}=await sb.from('sold_customers').delete().eq('id',r.id);if(error)return alert('Delete error: '+error.message);}
+  state.rows=state.rows.filter(x=>x!==r);
+  closeModal();render();toast('Record deleted');
+}
+async function saveTag(idx){
+  const r=state.rows[idx];if(!r)return;
+  const tag_in=document.getElementById('ed_tag_in').checked;
+  const costRaw=document.getElementById('ed_tag_cost').value.replace(/[^0-9.]/g,'');
+  const tag_cost=costRaw?parseFloat(costRaw):null;
+  const tag_number=document.getElementById('ed_tag_number').value.trim();
+  if(LIVE){const {error}=await sb.from('sold_customers').update({tag_in,tag_cost,tag_number}).eq('id',r.id);if(error)return alert('Save error: '+error.message);}
+  r.tag_in=tag_in;r.tag_cost=tag_cost;r.tag_number=tag_number;
+  toast('Tag info saved');closeModal();render();
+}
+
+/* ---------- modal ---------- */
+function modal(html){let s=document.getElementById('scrim');
+  if(!s){s=document.createElement('div');s.id='scrim';s.className='scrim';s.onclick=e=>{if(e.target===s)closeModal();};document.body.appendChild(s);}
+  s.innerHTML=`<div class="modal">${html}</div>`;}
+function closeModal(){const s=document.getElementById('scrim');if(s)s.remove();}
+function toast(m){const t=document.createElement('div');t.textContent=m;t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--asphalt);color:#fff;padding:11px 18px;border-radius:10px;font-weight:600;font-size:13px;box-shadow:var(--shadow-lg);z-index:100';document.body.appendChild(t);setTimeout(()=>t.remove(),2800);}
+
+/* ---------- import (Frazer) ---------- */
+const FIELDS=[
+  {key:'first_name',label:'First name',syn:['first name','firstname','buyer first name','first']},
+  {key:'last_name',label:'Last name',syn:['last name','lastname','buyer last name','last']},
+  {key:'home_phone',label:'Home phone',syn:['home phone','homephone','home']},
+  {key:'cell_phone',label:'Cell phone',syn:['cell phone','cellphone','cell','mobile']},
+  {key:'email',label:'Email',syn:['email','email address','e-mail']},
+  {key:'sale_date',label:'Sale date',syn:['sale date','date of sale','sold date']},
+  {key:'sale_type',label:'Type of sale',syn:['type of sale','sale type']},
+  {key:'veh_year',label:'Vehicle year',syn:['vehicle year','year']},
+  {key:'veh_make',label:'Vehicle make',syn:['vehicle make','make']},
+  {key:'veh_model',label:'Vehicle model',syn:['vehicle model','model']},
+  {key:'vin',label:'VIN',syn:['vehicle vin','vin','full vin']},
+  {key:'vin_last6',label:'Last 6 VIN',syn:['last 6 vin','last6 vin','last 6 of vin','vin last 6']},
+  {key:'first_payment_date',label:'1st payment date',syn:['1st payment date','first payment date','first payment']},
+  {key:'note_payment_amount',label:'Payment amount',syn:['payment amt','payment amount','note payment amount','note payment','regular payment amount','regular payment','note amount','monthly payment','pmt amt','pmt amount']},
+  {key:'pay_schedule',label:'Pay schedule',syn:['pay schedule','payment schedule','payment frequency','frequency','schedule']},
+  {key:'num_payments',label:'Number of payments',syn:['number of payments','num payments','no of payments','term','payments']},
+  {key:'current_due_date',label:'Current date due',syn:['current date due','current due date','next due date','date due','next payment date','next payment due']},
+  {key:'service_contract',label:'Service contract',syn:['service contract']},
+  {key:'service_contract_company',label:'Service contract company',syn:['service contract company']},
+  {key:'lien_holder',label:'Lienholder',syn:['lien holder company','lienholder','lien holder','lien']},
+  {key:'cobuyer_first',label:'Co-buyer first',syn:['cobuyer first name','co-buyer first name','co buyer first name']},
+  {key:'cobuyer_last',label:'Co-buyer last',syn:['cobuyer last name','co-buyer last name']},
+  {key:'cobuyer_home_phone',label:'Co-buyer home phone',syn:['cobuyer home phone','co-buyer home phone']},
+  {key:'cobuyer_email',label:'Co-buyer email',syn:['cobuyer email address','co-buyer email address','cobuyer email','co-buyer email']},
+];
+const imp={headers:null,rows:null,map:{},preview:null,refresh:false};
+
+function parseCSV(text){const rows=[];let i=0,f='',row=[],q=false;text=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  while(i<text.length){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){f+='"';i+=2;continue;}q=false;i++;continue;}f+=c;i++;continue;}
+    if(c==='"'){q=true;i++;continue;}
+    if(c===','){row.push(f);f='';i++;continue;}
+    if(c==='\n'){row.push(f);rows.push(row);f='';row=[];i++;continue;}
+    f+=c;i++;}
+  if(f.length||row.length){row.push(f);rows.push(row);}
+  return rows.filter(r=>r.some(x=>String(x).trim()!==''));}
+function loadSavedMap(){try{return JSON.parse(localStorage.getItem('gmc_frazer_map')||'null');}catch(e){return null;}}
+function saveMap(){try{const o={};Object.entries(imp.map).forEach(([k,idx])=>{if(idx!==''&&idx!=null)o[k]=imp.headers[+idx];});localStorage.setItem('gmc_frazer_map',JSON.stringify(o));}catch(e){}}
+function autoMap(){
+  imp.map={};const used=new Set();
+  const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+  const H=imp.headers.map(norm);
+  FIELDS.forEach(f=>{for(let i=0;i<H.length;i++){if(!used.has(i)&&f.syn.includes(H[i])){imp.map[f.key]=String(i);used.add(i);break;}}});
+  FIELDS.forEach(f=>{if(imp.map[f.key]!=null)return;for(let i=0;i<H.length;i++){if(!used.has(i)&&f.syn.some(s=>H[i].includes(s))){imp.map[f.key]=String(i);used.add(i);break;}}});
+  const saved=loadSavedMap();if(saved)Object.entries(saved).forEach(([k,name])=>{const i=imp.headers.indexOf(name);if(i>=0)imp.map[k]=String(i);});
+}
+function isFrazer(rows){const h=(rows[0]||[]).map(c=>String(c).toLowerCase().trim());return h.includes('sale date')&&(h.includes('vehicle vin')||h.includes('last 6 vin'));}
+
+function openImport(){
+  imp.headers=imp.rows=imp.preview=null;
+  modal(`
+   <div class="modal-h"><h2>Import from Frazer</h2><button class="x" onclick="closeModal()">×</button></div>
+   <div class="modal-b">
+     <p style="color:var(--muted);margin-top:0;font-size:13.5px">Upload your Frazer sold-customers export (CSV or Excel). New sales are added; anyone already recorded (matched by VIN) is skipped, so re-importing is safe.</p>
+     <div onclick="document.getElementById('f_file').click()" style="border:2px dashed var(--line);border-radius:12px;padding:34px;text-align:center;cursor:pointer;color:var(--muted)" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--line)';this.style.color='var(--muted)'">
+       <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom:8px"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+       <div style="font-weight:600;color:var(--ink)">Choose export file</div>
+       <div style="font-size:12px;margin-top:3px">CSV or Excel (.xlsx) — drop it here</div>
+       <input type="file" id="f_file" accept=".csv,.xlsx,.xls,.xlsm,text/csv" style="display:none" onchange="if(this.files[0])onFile(this.files[0])"></div>
+     <div style="text-align:center;color:var(--muted-2);font-size:12px;margin:14px 0 8px">— or paste rows —</div>
+     <textarea id="f_paste" placeholder="Paste CSV text here…" style="width:100%;min-height:70px;padding:10px;border:1px solid var(--line);border-radius:9px;font-family:'JetBrains Mono',monospace;font-size:12px;resize:vertical"></textarea>
+   </div>
+   <div class="modal-f"><button class="btn-ghost" onclick="closeModal()">Cancel</button><div style="flex:1"></div>
+     <button class="btn-primary" onclick="onPaste()">Use pasted text</button></div>`);
+  const box=document.querySelector('.modal');box.ondragover=e=>e.preventDefault();box.ondrop=e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f)onFile(f);};
+}
+function onFile(file){const isX=/\.(xlsx|xls|xlsm)$/i.test(file.name);const r=new FileReader();
+  r.onload=()=>{try{if(isX){const wb=XLSX.read(new Uint8Array(r.result),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];handleRows(XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''}));}else handleRows(parseCSV(r.result));}catch(e){alert('Could not read file: '+e.message);}};
+  if(isX)r.readAsArrayBuffer(file);else r.readAsText(file);}
+function onPaste(){const t=document.getElementById('f_paste').value;if(!t.trim())return alert('Paste CSV text or choose a file.');handleRows(parseCSV(t));}
+function handleRows(rows){
+  if(!rows||rows.length<2)return alert('No data rows found.');
+  imp.headers=rows[0].map(h=>String(h).trim());imp.rows=rows.slice(1);autoMap();
+  const mapped=FIELDS.filter(f=>imp.map[f.key]!=null).length;
+  if(isFrazer(rows)&&mapped>=8)buildPreview();else showMapping();
+}
+function showMapping(){
+  const opts=sel=>`<option value="">— none —</option>`+imp.headers.map((h,i)=>`<option value="${i}" ${String(i)===String(sel)?'selected':''}>${esc(h)}</option>`).join('');
+  modal(`
+   <div class="modal-h"><h2>Match your columns</h2><button class="x" onclick="closeModal()">×</button></div>
+   <div class="modal-b"><p style="color:var(--muted);margin-top:0;font-size:13px">Adjust anything mismatched — remembered for next time.</p>
+     ${FIELDS.map(f=>`<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+       <div style="width:150px;font-size:12.5px;font-weight:600;color:var(--muted)">${f.label}</div>
+       <select onchange="imp.map['${f.key}']=this.value" style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px">${opts(imp.map[f.key])}</select></div>`).join('')}
+   </div>
+   <div class="modal-f"><button class="btn-ghost" onclick="openImport()">Back</button><div style="flex:1"></div>
+     <button class="btn-primary" onclick="buildPreview()">Preview →</button></div>`);
+}
+function rowVal(row,key){const idx=imp.map[key];return(idx===undefined||idx===''||idx==null)?'':String(row[+idx]||'').trim();}
+function toISO(s){const t=Date.parse(s);if(isNaN(t))return s||null;const d=new Date(t);return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');}
+function buildRec(row){
+  const vin=rowVal(row,'vin').toUpperCase();
+  return {first_name:rowVal(row,'first_name'),last_name:rowVal(row,'last_name'),
+    home_phone:rowVal(row,'home_phone'),cell_phone:rowVal(row,'cell_phone'),email:rowVal(row,'email').toLowerCase(),
+    sale_date:toISO(rowVal(row,'sale_date')),sale_type:rowVal(row,'sale_type'),
+    veh_year:rowVal(row,'veh_year'),veh_make:rowVal(row,'veh_make'),veh_model:rowVal(row,'veh_model'),
+    vin,vin_last6:rowVal(row,'vin_last6')||(vin?vin.slice(-6):''),
+    first_payment_date:toISO(rowVal(row,'first_payment_date')),
+    note_payment_amount:toMoney(rowVal(row,'note_payment_amount')),
+    pay_schedule:rowVal(row,'pay_schedule'),
+    num_payments:toInt(rowVal(row,'num_payments')),
+    current_due_date:toISO(rowVal(row,'current_due_date')),
+    service_contract:rowVal(row,'service_contract'),service_contract_company:rowVal(row,'service_contract_company'),
+    lien_holder:rowVal(row,'lien_holder'),
+    cobuyer_first:rowVal(row,'cobuyer_first'),cobuyer_last:rowVal(row,'cobuyer_last'),
+    cobuyer_home_phone:rowVal(row,'cobuyer_home_phone'),cobuyer_email:rowVal(row,'cobuyer_email').toLowerCase()};
+}
+function matchExisting(r){
+  if(!r.vin)return null;
+  const key=r.vin.toUpperCase()+'|'+(r.last_name||'').toLowerCase();
+  return state.rows.find(x=>(x.vin||'').toUpperCase()+'|'+(x.last_name||'').toLowerCase()===key)||null;
+}
+/* ---------- merging into records that already exist ----------
+   Rule: the file may FILL a field that is currently empty, but it never
+   replaces a value you already have. Tag info is not in the import at all,
+   so it can't be touched.                                                */
+const MERGE_FIELDS=['first_name','last_name','home_phone','cell_phone','email','sale_date','sale_type',
+  'veh_year','veh_make','veh_model','vin','vin_last6','first_payment_date','note_payment_amount',
+  'pay_schedule','num_payments','current_due_date','service_contract','service_contract_company',
+  'lien_holder','cobuyer_first','cobuyer_last','cobuyer_home_phone','cobuyer_email'];
+/* Values that legitimately move as payments are made. Only refreshed when
+   you tick the box — otherwise they'd freeze at whatever imported first. */
+const REFRESH_FIELDS=['current_due_date'];
+const FIELD_LABEL=Object.fromEntries(FIELDS.map(f=>[f.key,f.label]));
+
+function isBlank(v){return v==null||v===''||(typeof v==='string'&&!v.trim());}
+function sameVal(a,b){
+  if(a instanceof Date||b instanceof Date)return String(a)===String(b);
+  if(typeof a==='number'||typeof b==='number'){const x=toMoney(a),y=toMoney(b);return x===y;}
+  return String(a??'').trim()===String(b??'').trim();
+}
+/* Returns {field:newValue} for everything this row can safely add. */
+function diffExisting(ex,inc,refresh){
+  const patch={};
+  MERGE_FIELDS.forEach(k=>{
+    const nv=inc[k];
+    if(isBlank(nv))return;                                  // file has nothing to offer
+    if(isBlank(ex[k])){patch[k]=nv;return;}                 // fill the gap
+    if(refresh&&REFRESH_FIELDS.includes(k)&&!sameVal(ex[k],nv))patch[k]=nv;
+  });
+  return patch;
+}
+function fmtVal(k,v){
+  if(k==='note_payment_amount')return fmtMoney(v);
+  if(/date/.test(k))return fmtDate(v);
+  return String(v??'');
+}
+
+function buildPreview(){
+  const news=[],ups=[];let dupInFile=0;const seen=new Set();
+  imp.rows.forEach(row=>{const r=buildRec(row);if(!r.first_name&&!r.last_name&&!r.vin)return;
+    const ex=matchExisting(r);if(ex){r._ex=ex;r._patch=diffExisting(ex,r,imp.refresh);ups.push(r);return;}
+    const key=(r.vin||'').toUpperCase()+'|'+(r.last_name||'').toLowerCase();
+    if(r.vin&&seen.has(key)){dupInFile++;return;}
+    if(r.vin)seen.add(key);
+    news.push(r);});
+  imp.preview={news,ups,dupInFile};
+  const sample=news.slice(0,7);
+
+  /* what the merge would add, tallied by field */
+  const toMerge=ups.filter(r=>Object.keys(r._patch).length);
+  const byField={};
+  toMerge.forEach(r=>Object.keys(r._patch).forEach(k=>{byField[k]=(byField[k]||0)+1;}));
+  const fieldRows=Object.entries(byField).sort((a,b)=>b[1]-a[1]);
+  const unchanged=ups.length-toMerge.length;
+
+  modal(`
+   <div class="modal-h"><h2>Review import</h2><button class="x" onclick="closeModal()">×</button></div>
+   <div class="modal-b">
+     <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+       <div class="statc"><div class="n" style="color:var(--primary)">${news.length}</div><div class="l">New sales</div></div>
+       <div class="statc"><div class="n" style="color:${toMerge.length?'#B45309':'var(--muted)'}">${toMerge.length}</div><div class="l">To fill in</div></div>
+       <div class="statc"><div class="n" style="color:var(--muted)">${unchanged}</div><div class="l">Unchanged</div></div>
+       ${dupInFile?`<div class="statc"><div class="n" style="color:var(--muted)">${dupInFile}</div><div class="l">Dupes in file</div></div>`:''}</div>
+
+     ${ups.length?`<div style="border:1px solid ${toMerge.length?'#FDE68A':'var(--line)'};background:${toMerge.length?'#FFFBEB':'var(--paper)'};border-radius:11px;padding:13px 15px;margin-bottom:16px">
+       ${toMerge.length?`
+         <div style="font-weight:600;font-size:13.5px;color:#92400E;margin-bottom:4px">
+           Filling in ${fieldRows.reduce((a,b)=>a+b[1],0)} empty field${fieldRows.reduce((a,b)=>a+b[1],0)===1?'':'s'} across ${toMerge.length} existing record${toMerge.length===1?'':'s'}</div>
+         <div style="font-size:12.5px;color:#92400E;margin-bottom:10px">Existing values are never replaced — only blanks get filled.</div>
+         <table style="width:100%;font-size:13px"><tbody>
+         ${fieldRows.map(([k,n])=>`<tr>
+           <td style="padding:3px 0;border:none">${esc(FIELD_LABEL[k]||k)}</td>
+           <td style="padding:3px 0;border:none;text-align:right;font-weight:600;color:#92400E">${n} record${n===1?'':'s'}</td></tr>`).join('')}
+         </tbody></table>
+         <details style="margin-top:9px">
+           <summary style="cursor:pointer;font-size:12.5px;font-weight:600;color:#92400E">See which customers</summary>
+           <div style="margin-top:7px;font-size:12.5px;max-height:170px;overflow:auto">
+             ${toMerge.slice(0,40).map(r=>`<div style="padding:3px 0">
+               <b>${esc(fullName(r))||'—'}</b> — ${Object.entries(r._patch).map(([k,v])=>`${esc(FIELD_LABEL[k]||k)} <span style="color:#065F46">${esc(fmtVal(k,v))||'(set)'}</span>`).join(', ')}
+             </div>`).join('')}
+             ${toMerge.length>40?`<div style="color:var(--muted);padding-top:5px">+ ${toMerge.length-40} more</div>`:''}
+           </div></details>`
+       :`<div style="font-size:13px;color:var(--muted)">All ${ups.length} matching record${ups.length===1?'':'s'} already have everything this file provides — nothing to fill in.</div>`}
+       <label style="display:flex;align-items:center;gap:8px;margin-top:11px;padding-top:10px;border-top:1px solid ${toMerge.length?'#FDE68A':'var(--line)'};font-size:12.5px;cursor:pointer">
+         <input type="checkbox" ${imp.refresh?'checked':''} onchange="imp.refresh=this.checked;buildPreview()" style="width:15px;height:15px;accent-color:var(--primary)">
+         <span>Also refresh <b>Current date due</b> on existing records — it moves as payments are made, so it goes stale otherwise. This one <i>does</i> overwrite.</span>
+       </label>
+     </div>`:''}
+
+     ${sample.length?`<div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px">New sales</div>
+     <div class="tablewrap"><table><thead><tr><th>Customer</th><th>Vehicle</th><th>Sale Date</th><th>Payment</th><th>Lienholder</th></tr></thead><tbody>
+       ${sample.map(r=>`<tr><td style="font-weight:600">${esc(fullName(r))||'—'}</td><td>${esc(vehicle(r))||'—'}<div class="mono" style="color:var(--muted);font-size:11px">${esc(r.vin_last6?'…'+r.vin_last6:'')}</div></td><td class="mono">${esc(fmtDate(r.sale_date))}</td><td class="mono">${esc(fmtMoney(r.note_payment_amount))||'<span style="color:var(--muted)">—</span>'}</td><td>${esc(r.lien_holder)||'—'}</td></tr>`).join('')}
+     </tbody></table></div>${news.length>7?`<div style="font-size:12px;color:var(--muted-2);margin-top:8px">+ ${news.length-7} more</div>`:''}`
+     :`<div style="color:var(--muted);text-align:center;padding:14px">No new sales in this file.</div>`}
+   </div>
+   <div class="modal-f"><button class="btn-ghost" onclick="${isFrazer([imp.headers])?'openImport':'showMapping'}()">Back</button><div style="flex:1"></div>
+     <button class="btn-primary" onclick="commitImport()" ${(news.length||toMerge.length)?'':'disabled style="opacity:.5"'}>
+       ${[news.length?`Import ${news.length}`:'',toMerge.length?`Update ${toMerge.length}`:''].filter(Boolean).join(' · ')||'Nothing to do'}</button></div>`);
+}
+async function commitImport(){
+  const {news,ups}=imp.preview;
+  const merges=(ups||[]).filter(r=>Object.keys(r._patch||{}).length);
+  if(!news.length&&!merges.length){closeModal();return;}
+
+  let inserted=news.length,failedInsert=0,merged=0,failedMerge=0;
+
+  if(LIVE){
+    if(news.length){
+      const payload=news.map(({_ex,_patch,...r})=>r);
+      const {error}=await sb.from('sold_customers').insert(payload);
+      if(error){
+        // Fall back to one at a time so a single bad row can't sink the batch.
+        inserted=0;
+        for(const r of payload){const {error:e}=await sb.from('sold_customers').insert(r);e?failedInsert++:inserted++;}
+      }
+    }
+    for(const r of merges){
+      const {error}=await sb.from('sold_customers').update(r._patch).eq('id',r._ex.id);
+      if(error){failedMerge++;console.warn('merge failed',r._ex.id,error.message);}
+      else{Object.assign(r._ex,r._patch);merged++;}
+    }
+  }else{
+    news.forEach(r=>{const {_ex,_patch,...rec}=r;rec.id='s'+Date.now()+Math.random().toString(36).slice(2,6);state.rows.push(rec);});
+    merges.forEach(r=>{Object.assign(r._ex,r._patch);merged++;});
+  }
+
+  saveMap();closeModal();await load();
+  const bits=[];
+  if(inserted)     bits.push(`Imported ${inserted}`);
+  if(merged)       bits.push(`filled in ${merged} existing`);
+  if(failedInsert) bits.push(`skipped ${failedInsert} duplicate${failedInsert===1?'':'s'}`);
+  if(failedMerge)  bits.push(`${failedMerge} update${failedMerge===1?'':'s'} failed`);
+  toast(bits.join(' · ')||'Nothing changed');
+}
+
+/* ---------- advanced filter ---------- */
+function openAdvFilter(){if(!state.advFilters.length)state.advFilters=[{field:'lien_holder',op:'contains',value:''}];renderAdvModal();}
+function renderAdvModal(){
+  const fo=f=>ADV_FIELDS.map(x=>`<option value="${x.k}" ${f.field===x.k?'selected':''}>${x.l}</option>`).join('');
+  const oo=f=>[['contains','contains'],['equals','equals'],['not_equals','does not equal'],['empty','is empty'],['not_empty','is not empty']].map(o=>`<option value="${o[0]}" ${f.op===o[0]?'selected':''}>${o[1]}</option>`).join('');
+  const isEmptyOp=op=>op==='empty'||op==='not_empty';
+  modal(`
+   <div class="modal-h"><h2>Advanced filter</h2><button class="x" onclick="closeModal()">×</button></div>
+   <div class="modal-b"><p style="color:var(--muted);margin-top:0;font-size:13px">Show records where <b>all</b> of these are true:</p>
+     ${state.advFilters.map((f,i)=>`<div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+       <select onchange="state.advFilters[${i}].field=this.value" style="flex:1.2;padding:8px;border:1px solid var(--line);border-radius:8px">${fo(f)}</select>
+       <select onchange="advOp(${i},this.value)" style="width:150px;padding:8px;border:1px solid var(--line);border-radius:8px">${oo(f)}</select>
+       <input value="${esc(f.value||'')}" ${isEmptyOp(f.op)?'disabled style="opacity:.4;"':''} oninput="state.advFilters[${i}].value=this.value" placeholder="value" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:8px">
+       <button class="btn-ghost" style="height:34px;padding:0 11px" onclick="advRemove(${i})">✕</button></div>`).join('')}
+     <button class="btn-ghost" style="height:34px;margin-top:4px" onclick="advAdd()">+ Add condition</button>
+   </div>
+   <div class="modal-f"><button class="btn-ghost" onclick="advClear()">Clear all</button><div style="flex:1"></div><button class="btn-primary" onclick="advApply()">Apply</button></div>`);
+}
+function advAdd(){state.advFilters.push({field:'lien_holder',op:'contains',value:''});renderAdvModal();}
+function advRemove(i){state.advFilters.splice(i,1);renderAdvModal();}
+function advOp(i,op){state.advFilters[i].op=op;renderAdvModal();}
+function advClear(){state.advFilters=[];closeModal();render();}
+function advApply(){state.advFilters=state.advFilters.filter(f=>f.op==='empty'||f.op==='not_empty'||(f.value||'').trim()!=='');closeModal();render();}
+
+/* ---------- export ---------- */
+function exportCSV(which){
+  const rows=which==='selected'?state.rows.filter(r=>state.selected.has(r.id)):filtered();
+  if(!rows.length)return alert('Nothing to export.');
+  const cols=['first_name','last_name','home_phone','cell_phone','email','sale_date','sale_type','veh_year','veh_make','veh_model','vin','vin_last6','first_payment_date','note_payment_amount','pay_schedule','num_payments','current_due_date','service_contract','service_contract_company','lien_holder','cobuyer_first','cobuyer_last','cobuyer_home_phone','cobuyer_email','tag_in','tag_cost','tag_number'];
+  const esc2=v=>{v=v==null?'':String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const csv=[cols.join(',')].concat(rows.map(r=>cols.map(c=>esc2(r[c])).join(','))).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='sold_customers_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+/* ---------- auth ---------- */
+function renderLogin(){document.getElementById('root').innerHTML=`
+  <div class="login"><div class="box"><div class="mark">G</div>
+    <h1>${esc(CFG.DEALER_NAME)}</h1><p>Sold Customers — sign in</p>
+    <div class="fld"><label>Email</label><input id="li_e" type="email" placeholder="you@dealer.com"></div>
+    <div class="fld"><label>Password</label><input id="li_p" type="password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-primary" onclick="doLogin()">Sign in</button><div class="err" id="li_err"></div></div></div>`;}
+async function doLogin(){const email=document.getElementById('li_e').value.trim(),password=document.getElementById('li_p').value;
+  const {error}=await sb.auth.signInWithPassword({email,password});if(error){document.getElementById('li_err').textContent=error.message;return;}
+  state.user={name:email.split('@')[0],email};load();}
+async function logout(){await sb.auth.signOut();state.user=null;render();}
+async function initAuth(){const {data}=await sb.auth.getSession();if(data.session){const e=data.session.user.email;state.user={name:e.split('@')[0],email:e};}}
+
+/* ---------- demo data ---------- */
+const DEMO=[
+ {id:'s1',first_name:'Marcus',last_name:'Johnson',home_phone:'',cell_phone:'8135550142',email:'mjohnson@gmail.com',sale_date:'2026-07-28',sale_type:'Retail',veh_year:'2020',veh_make:'Ford',veh_model:'F-150 XLT',vin:'1FTEW1EP5LKD12345',vin_last6:'D12345',first_payment_date:'2026-08-28',note_payment_amount:512.43,service_contract:'Yes',service_contract_company:'GWC Warranty',lien_holder:'Westlake Financial',cobuyer_first:'',cobuyer_last:'',cobuyer_home_phone:'',cobuyer_email:''},
+ {id:'s2',first_name:'Latoya',last_name:'Williams',home_phone:'8135550198',cell_phone:'8135550199',email:'lwilliams@yahoo.com',sale_date:'2026-07-30',sale_type:'BHPH',veh_year:'2019',veh_make:'Honda',veh_model:'Civic',vin:'2HGFC2F59KH512346',vin_last6:'512346',first_payment_date:'2026-08-15',note_payment_amount:275.00,service_contract:'No',service_contract_company:'',lien_holder:'',cobuyer_first:'Andre',cobuyer_last:'Williams',cobuyer_home_phone:'8135550198',cobuyer_email:'awill@yahoo.com'},
+ {id:'s3',first_name:'David',last_name:'Chen',home_phone:'',cell_phone:'8135550177',email:'dchen@outlook.com',sale_date:'2026-08-01',sale_type:'Outside Finance',veh_year:'2021',veh_make:'Toyota',veh_model:'Camry SE',vin:'4T1G11AK5MU512347',vin_last6:'512347',first_payment_date:'2026-09-01',note_payment_amount:441.18,service_contract:'Yes',service_contract_company:'SecureOne by Marathon',lien_holder:'Capital One Auto',cobuyer_first:'',cobuyer_last:'',cobuyer_home_phone:'',cobuyer_email:''},
+ {id:'s4',first_name:'Angela',last_name:'Ruiz',home_phone:'8135550130',cell_phone:'',email:'aruiz@gmail.com',sale_date:'2026-08-02',sale_type:'Cash',veh_year:'2018',veh_make:'Nissan',veh_model:'Rogue',vin:'JN8AT2MV6JW312348',vin_last6:'312348',first_payment_date:'',note_payment_amount:null,service_contract:'No',service_contract_company:'',lien_holder:'',cobuyer_first:'',cobuyer_last:'',cobuyer_home_phone:'',cobuyer_email:''},
+ {id:'s5',first_name:'James',last_name:'Patterson',home_phone:'',cell_phone:'8135550155',email:'jpatt@gmail.com',sale_date:'2026-08-03',sale_type:'Retail',veh_year:'2022',veh_make:'Jeep',veh_model:'Grand Cherokee',vin:'1C4RJFBG7NC512349',vin_last6:'512349',first_payment_date:'2026-09-03',note_payment_amount:689.75,service_contract:'Yes',service_contract_company:'GWC Warranty',lien_holder:'Ally Financial',cobuyer_first:'',cobuyer_last:'',cobuyer_home_phone:'',cobuyer_email:''},
+];
+
+/* ---------- boot ---------- */
+(async function(){
+  if(LIVE){await initAuth();}
+  GMC.init({
+    sb, LIVE, recordType:'sold', config:CFG,
+    getUserName:userName,
+    onSent:()=>renderContent()
+  });
+  await load();
+})();
+</script>
+</body>
+</html>
