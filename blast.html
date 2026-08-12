@@ -282,8 +282,8 @@ function render(){
         <a href="${esc(CFG.SOLD_URL||'sold.html')}">Sold</a>
         <a class="on">Blast</a>
       </div>
-      <div class="stat hero"><div class="n">${a.keep.length}</div><div class="l">Will receive this email</div></div>
-      <div class="stat"><div class="n">${a.pool.length}</div><div class="l">Match your filters</div></div>
+      <div class="stat hero"><div class="n" id="statKeep">${a.keep.length}</div><div class="l">Will receive this email</div></div>
+      <div class="stat"><div class="n" id="statPool">${a.pool.length}</div><div class="l">Match your filters</div></div>
       <div class="stat"><div class="n">${GMC.sentToday()}</div><div class="l">Sent today (cap ${GMC.DAILY_CAP})</div></div>
       <div class="side-foot"><div class="u"><div class="av">${initials(userName())}</div>
         <div style="font-weight:600">${esc(userName())}</div></div>
@@ -297,16 +297,16 @@ function render(){
         <button class="btn-ghost" onclick="GMCUI.openTemplates()">✉ Templates</button>
         <button class="btn-ghost" onclick="saveAsTemplate()">Save as template</button>
         <button class="btn-ghost" onclick="sendTest()">Send test to me</button>
-        <button class="btn-primary" onclick="startBlast()" ${a.keep.length?'':'disabled'}>
+        <button class="btn-primary" id="sendBtn" onclick="startBlast()" ${a.keep.length?'':'disabled'}>
           Send to ${a.keep.length} customer${a.keep.length===1?'':'s'}
         </button>
       </div>
       ${LIVE?'':'<div class="demo-flag">● Demo mode — sample data. Add Supabase keys to go live.</div>'}
 
       <div class="work">
-        <div class="pane">${audiencePane(a)}</div>
+        <div class="pane" id="panAud">${audiencePane(a)}</div>
         <div class="pane mid">${composerPane()}</div>
-        <div class="pane">${previewPane(a)}</div>
+        <div class="pane" id="panPv">${previewPane(a)}</div>
       </div>
     </div>
   </div>`;
@@ -315,46 +315,65 @@ function render(){
   paintPreview();
 }
 
+/* Split out so a keystroke can repaint these without rebuilding the
+   filter controls — re-rendering the pane would blur whatever you're typing in. */
+function countHtml(a){
+  return `<div class="big">${a.keep.length}</div>
+    <div class="lbl">recipients selected</div>
+    ${a.skip.length?`<div class="sk"><b>${a.skip.length}</b> excluded automatically — ${skipSummary(a.skip)}</div>`:''}`;
+}
+
+function listHtml(a){
+  return `${a.send.length||a.skip.length?'':'<div style="padding:22px;text-align:center;color:var(--muted);font-size:13px">Nobody matches these filters.</div>'}
+    ${a.send.map(s=>{
+      const off=state.dropped.has(s.rec.id);
+      return `<div class="rrow ${off?'off':''}">
+        <input type="checkbox" ${off?'':'checked'} onchange="toggleOne('${esc(String(s.rec.id))}')">
+        <span class="nm">${esc(s.name)}</span>
+        <span class="em">${esc(s.email)}</span></div>`;
+    }).join('')}
+    ${a.skip.map(s=>`<div class="rrow bad">
+      <span style="width:13px">⚠</span>
+      <span class="nm">${esc(s.name)}</span>
+      <span class="why">${esc(s.why)}</span></div>`).join('')}`;
+}
+
 function audiencePane(a){
   const f=state.f;
   return `
   <h3>Audience</h3>
-  <div class="count">
-    <div class="big">${a.keep.length}</div>
-    <div class="lbl">recipients selected</div>
-    ${a.skip.length?`<div class="sk"><b>${a.skip.length}</b> excluded automatically — ${skipSummary(a.skip)}</div>`:''}
-  </div>
+  <div class="count" id="audCount">${countHtml(a)}</div>
 
   <div class="fld"><label>Search</label>
     <input class="in" value="${esc(f.q)}" placeholder="Name, email, vehicle, VIN…"
-      oninput="state.f.q=this.value;refresh()"></div>
+      oninput="state.f.q=this.value;refreshSoft()"></div>
 
   <div class="row2">
-    <div class="fld"><label>Sold from</label><input class="in" type="date" value="${esc(f.from)}" onchange="state.f.from=this.value;refresh()"></div>
-    <div class="fld"><label>Sold to</label><input class="in" type="date" value="${esc(f.to)}" onchange="state.f.to=this.value;refresh()"></div>
+    <div class="fld"><label>Sold from</label><input class="in" type="date" value="${esc(f.from)}" onchange="state.f.from=this.value;refreshSoft()"></div>
+    <div class="fld"><label>Sold to</label><input class="in" type="date" value="${esc(f.to)}" onchange="state.f.to=this.value;refreshSoft()"></div>
   </div>
 
   <div class="fld"><label>Sale type</label>
-    <select class="in" onchange="state.f.type=this.value;refresh()">
+    <select class="in" onchange="state.f.type=this.value;refreshSoft()">
       <option value="">All sale types</option>
       ${distinct(r=>r.sale_type).map(t=>`<option ${f.type===t?'selected':''}>${esc(t)}</option>`).join('')}
     </select></div>
 
   <div class="fld"><label>Lienholder</label>
-    <select class="in" onchange="state.f.lien=this.value;refresh()">
+    <select class="in" onchange="state.f.lien=this.value;refreshSoft()">
       <option value="">All lienholders</option>
       ${distinct(r=>r.lien_holder).map(t=>`<option ${f.lien===t?'selected':''}>${esc(t)}</option>`).join('')}
     </select></div>
 
   <div class="row2">
     <div class="fld"><label>Service contract</label>
-      <select class="in" onchange="state.f.sc=this.value;refresh()">
+      <select class="in" onchange="state.f.sc=this.value;refreshSoft()">
         <option value="">Any</option>
         <option value="yes" ${f.sc==='yes'?'selected':''}>Has one</option>
         <option value="no" ${f.sc==='no'?'selected':''}>None</option>
       </select></div>
     <div class="fld"><label>Tag</label>
-      <select class="in" onchange="state.f.tag=this.value;refresh()">
+      <select class="in" onchange="state.f.tag=this.value;refreshSoft()">
         <option value="">Any</option>
         <option value="pending" ${f.tag==='pending'?'selected':''}>Pending</option>
         <option value="in" ${f.tag==='in'?'selected':''}>Tag in</option>
@@ -362,7 +381,7 @@ function audiencePane(a){
   </div>
 
   <div class="fld"><label>Payment data</label>
-    <select class="in" onchange="state.f.pay=this.value;refresh()">
+    <select class="in" onchange="state.f.pay=this.value;refreshSoft()">
       <option value="">Any</option>
       <option value="yes" ${f.pay==='yes'?'selected':''}>Has a payment amount (BHPH / financed)</option>
       <option value="no" ${f.pay==='no'?'selected':''}>No payment amount (cash / outside)</option>
@@ -381,7 +400,7 @@ function audiencePane(a){
     </select></div>
 
   <label class="chk"><input type="checkbox" ${f.recourse?'checked':''}
-    onchange="state.f.recourse=this.checked;refresh()"> Recourse lienholders only</label>
+    onchange="state.f.recourse=this.checked;refreshSoft()"> Recourse lienholders only</label>
 
   <div style="display:flex;gap:8px;margin:14px 0 10px">
     <button class="btn-ghost" style="flex:1;height:32px" onclick="allOn()">Tick all</button>
@@ -389,21 +408,8 @@ function audiencePane(a){
     <button class="btn-ghost" style="height:32px" onclick="resetFilters()">Reset</button>
   </div>
 
-  <h3>Recipients <span class="n">${a.keep.length}</span></h3>
-  <div class="rlist">
-    ${a.send.length||a.skip.length?'':'<div style="padding:22px;text-align:center;color:var(--muted);font-size:13px">Nobody matches these filters.</div>'}
-    ${a.send.map(s=>{
-      const off=state.dropped.has(s.rec.id);
-      return `<div class="rrow ${off?'off':''}">
-        <input type="checkbox" ${off?'':'checked'} onchange="toggleOne('${esc(String(s.rec.id))}')">
-        <span class="nm">${esc(s.name)}</span>
-        <span class="em">${esc(s.email)}</span></div>`;
-    }).join('')}
-    ${a.skip.map(s=>`<div class="rrow bad">
-      <span style="width:13px">⚠</span>
-      <span class="nm">${esc(s.name)}</span>
-      <span class="why">${esc(s.why)}</span></div>`).join('')}
-  </div>`;
+  <h3>Recipients <span class="n" id="audN">${a.keep.length}</span></h3>
+  <div class="rlist" id="audList">${listHtml(a)}</div>`;
 }
 
 function skipSummary(skip){
@@ -437,7 +443,7 @@ function composerPane(){
   <div class="fld"><label>Subject</label>
     <input class="in" id="subj" value="${esc(state.subject)}"
       placeholder="Subject line — {{tokens}} work here too"
-      oninput="state.subject=this.value;paintPreview()"></div>
+      oninput="state.subject=this.value;schedulePreview()"></div>
 
   <div class="fld"><label>Body</label><div id="edHost"></div></div>
   <div style="font-size:11.5px;color:var(--muted);line-height:1.55">
@@ -459,23 +465,41 @@ function gmailBar(){
     <button onclick="GMCUI.connect()">Connect Gmail</button></div>`;
 }
 
-function previewPane(a){
+function whoHtml(a){
   const n=a.keep.length;
   const i=Math.min(state.pvIdx,Math.max(0,n-1));
   const who=n?a.keep[i]:null;
+  return who
+    ? `<b>${esc(who.name)}</b> &lt;${esc(who.email)}&gt; <span style="color:var(--muted)">· ${i+1} of ${n}</span>`
+    : '<span style="color:var(--muted)">No recipients selected</span>';
+}
+
+/* Recipient line and arrows, without disturbing the composer. */
+function paintWho(a){
+  a=a||audience();
+  const w=document.getElementById('pvWho');
+  if(w)w.innerHTML=whoHtml(a);
+  const i=Math.min(state.pvIdx,Math.max(0,a.keep.length-1));
+  const p=document.getElementById('pvPrev'),nx=document.getElementById('pvNext');
+  if(p) p.disabled=i<=0;
+  if(nx)nx.disabled=i>=a.keep.length-1;
+}
+
+function previewPane(a){
+  const n=a.keep.length;
+  const i=Math.min(state.pvIdx,Math.max(0,n-1));
   return `
   <h3>Preview</h3>
   <div class="pvhead">
-    <button onclick="stepPv(-1)" ${i<=0?'disabled':''}>‹</button>
-    <button onclick="stepPv(1)" ${i>=n-1?'disabled':''}>›</button>
-    <div class="who">${who?`<b>${esc(who.name)}</b> &lt;${esc(who.email)}&gt; <span style="color:var(--muted)">· ${i+1} of ${n}</span>`
-      :'<span style="color:var(--muted)">No recipients selected</span>'}</div>
+    <button id="pvPrev" onclick="stepPv(-1)" ${i<=0?'disabled':''}>‹</button>
+    <button id="pvNext" onclick="stepPv(1)" ${i>=n-1?'disabled':''}>›</button>
+    <div class="who" id="pvWho">${whoHtml(a)}</div>
   </div>
   <div style="display:flex;gap:8px;margin-bottom:10px">
     <div class="seg">
-      <button class="${state.pvMode==='desktop'&&!state.pvText?'on':''}" onclick="state.pvText=false;state.pvMode='desktop';paintPreview()">Desktop</button>
-      <button class="${state.pvMode==='mobile'&&!state.pvText?'on':''}" onclick="state.pvText=false;state.pvMode='mobile';paintPreview()">Mobile</button>
-      <button class="${state.pvText?'on':''}" onclick="state.pvText=true;paintPreview()">Plain text</button>
+      <button class="${state.pvMode==='desktop'&&!state.pvText?'on':''}" onclick="switchPv('desktop',false)">Desktop</button>
+      <button class="${state.pvMode==='mobile'&&!state.pvText?'on':''}" onclick="switchPv('mobile',false)">Mobile</button>
+      <button class="${state.pvText?'on':''}" onclick="switchPv(state.pvMode,true)">Plain text</button>
     </div>
   </div>
   <div id="pvBox"></div>
@@ -492,7 +516,7 @@ function mountEditor(){
     accent:CFG.EMAIL_ACCENT,
     minHeight:'320px',
     placeholder:'Write your message. Use the toolbar for formatting and images.',
-    onChange:()=>{state.bodyHtml=state.editor.getHtml();paintPreview();}
+    onChange:()=>{state.bodyHtml=state.editor.getHtml();schedulePreview();}
   });
 }
 
@@ -501,6 +525,13 @@ function renderFor(rec){
   const subject=GMC.renderTemplate(state.subject,rec,'sold');
   const body=GMC.renderTemplate(state.bodyHtml,rec,'sold');
   return {subject,body};
+}
+
+/* Typing shouldn't re-render the email on every character. */
+let pvTimer=null;
+function schedulePreview(){
+  clearTimeout(pvTimer);
+  pvTimer=setTimeout(paintPreview,180);
 }
 
 function paintPreview(){
@@ -517,14 +548,19 @@ function paintPreview(){
   if(state.pvText){
     box.innerHTML=`<div class="pvtext">${esc('Subject: '+(subject||'(no subject)'))}\n\n${esc(GMC.htmlToText(html))}</div>`;
   }else{
-    const w=state.pvMode==='mobile'?390:'100%';
-    box.innerHTML=`
-      <div style="font-size:12.5px;font-weight:600;padding:0 0 8px">${subject?esc(subject):'<span style="color:var(--muted);font-weight:400">(no subject)</span>'}</div>
-      <div class="pvframe" style="${state.pvMode==='mobile'?'width:390px;margin:0 auto':''}">
-        <iframe sandbox="" title="Email preview"></iframe>
-      </div>`;
-    const f=box.querySelector('iframe');
-    f.srcdoc=html;
+    // Keep the iframe across repaints; recreating it flickers and reloads.
+    let frame=box.querySelector('iframe');
+    if(!frame){
+      box.innerHTML=`
+        <div id="pvSubj" style="font-size:12.5px;font-weight:600;padding:0 0 8px"></div>
+        <div class="pvframe"><iframe sandbox="" title="Email preview"></iframe></div>`;
+      frame=box.querySelector('iframe');
+    }
+    const subjEl=box.querySelector('#pvSubj');
+    if(subjEl)subjEl.innerHTML=subject?esc(subject):'<span style="color:var(--muted);font-weight:400">(no subject)</span>';
+    const wrap=box.querySelector('.pvframe');
+    if(wrap)wrap.style.cssText=state.pvMode==='mobile'?'width:390px;margin:0 auto':'';
+    if(frame.srcdoc!==html)frame.srcdoc=html;
   }
   paintWarnings(a);
 }
@@ -571,24 +607,59 @@ function paintWarnings(a){
 function stepPv(d){
   const a=audience();
   state.pvIdx=Math.max(0,Math.min(a.keep.length-1,state.pvIdx+d));
-  render();
+  paintWho(a);
+  paintPreview();
+}
+
+/* Mode switch redraws the preview pane only, so the toggle reflects state. */
+function switchPv(mode,text){
+  state.pvMode=mode;state.pvText=!!text;
+  const p=document.getElementById('panPv');
+  if(p)p.innerHTML=previewPane(audience());
+  paintPreview();
 }
 
 /* ---------- filter plumbing ---------- */
-/* Re-render the whole page but keep what is typed in the editor. */
+/* Repaint only what a filter change actually affects: the counts, the
+   recipient list and the preview. Rebuilding the page here would blur the
+   search box mid-word and tear down the rich text editor on every keystroke. */
+function refreshSoft(){
+  const a=audience();
+  const el=id=>document.getElementById(id);
+
+  const keep=el('statKeep');   if(keep)keep.textContent=a.keep.length;
+  const pool=el('statPool');   if(pool)pool.textContent=a.pool.length;
+  const cnt =el('audCount');   if(cnt) cnt.innerHTML=countHtml(a);
+  const num =el('audN');       if(num) num.textContent=a.keep.length;
+
+  const list=el('audList');
+  if(list){const top=list.scrollTop;list.innerHTML=listHtml(a);list.scrollTop=top;}
+
+  const btn=el('sendBtn');
+  if(btn){
+    btn.disabled=!a.keep.length;
+    btn.textContent=`Send to ${a.keep.length} customer${a.keep.length===1?'':'s'}`;
+  }
+
+  if(state.pvIdx>Math.max(0,a.keep.length-1))state.pvIdx=0;
+  paintWho(a);
+  schedulePreview();
+}
+
+/* Full rebuild — only when the controls themselves have to change. */
 function refresh(){
   if(state.editor)state.bodyHtml=state.editor.getHtml();
   state.pvIdx=0;
   render();
 }
-async function refreshQuiet(){await loadQuiet();refresh();}
+async function refreshQuiet(){await loadQuiet();refreshSoft();}
 function resetFilters(){state.f={q:'',type:'',lien:'',sc:'',tag:'',from:'',to:'',pay:'',recourse:false,quiet:''};state.quietSet=null;state.dropped.clear();refresh();}
 function toggleOne(id){
   if(state.dropped.has(id))state.dropped.delete(id);else state.dropped.add(id);
-  refresh();
+  refreshSoft();
 }
-function allOn(){state.dropped.clear();refresh();}
-function allOff(){audience().send.forEach(s=>state.dropped.add(s.rec.id));refresh();}
+function allOn(){state.dropped.clear();refreshSoft();}
+function allOff(){audience().send.forEach(s=>state.dropped.add(s.rec.id));refreshSoft();}
 
 /* ---------- templates ---------- */
 function pickTemplate(id){
