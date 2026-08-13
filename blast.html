@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Giant Motor Cars — Email Blast</title>
+
+<!-- ============================================================
+     CONFIG — keep these in step with index.html and sold.html.
+     ============================================================ -->
+<script>
+  window.BLAST_CONFIG = {
+    SUPABASE_URL:      "https://rnxjiiceacpdswlvjfwp.supabase.co",
+    SUPABASE_ANON_KEY: "sb_publishable_mTvsidLyuX3m_Q_Ma-KmJw_PgTH5hcZ",
+    LEADS_URL:         "index.html",
+    SOLD_URL:          "sold.html",
+    DEALER_NAME:       "Giant Motor Cars",
+    DEALER_PHONE:      "813-222-0010",
+
+    // ---- Email (Gmail) -------------------------------------
+    GOOGLE_CLIENT_ID:  "227059275402-tuk4q9f57sc30kioj57f1t2c7fbnhqjh.apps.googleusercontent.com",
+    // Shown in the footer of every email — CAN-SPAM requires a physical address
+    DEALER_ADDRESS:    "2004 E Dr Martin Luther King Jr Blvd, Tampa, FL 33610",
+    // Header bar and button colour in the email itself
+    EMAIL_ACCENT:      "#047857"
+  };
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --asphalt:#161b22; --asphalt-2:#1c2430; --asphalt-3:#2a3341;
+  --gmc-red:#db2229; --gmc-red-hi:#e11d3c;
+  --ink:#0F1115; --muted:#6B7280; --muted-2:#9AA3AF;
+  --paper:#F4F5F7; --card:#FFFFFF; --line:#E4E7EC; --line-2:#EDEFF3;
+  --primary:#047857; --primary-ink:#065F46; --primary-soft:#E7F6F0;
+  --shadow:0 1px 2px rgba(16,17,21,.04),0 4px 16px rgba(16,17,21,.06);
+  --shadow-lg:0 12px 40px rgba(16,17,21,.18);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:14px}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+
+.app{display:grid;grid-template-columns:230px 1fr;height:100vh;overflow:hidden}
+.side{background:var(--asphalt);color:#fff;display:flex;flex-direction:column;padding:20px 14px;
+  border-right:1px solid var(--asphalt-3)}
+.brand{display:block;padding:2px 8px 18px;text-align:center}
+.brand .mark{display:block;width:100%;max-width:150px;height:auto;margin:0 auto 10px;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
+.brand .bn{font-family:'Inter';font-weight:600;font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted-2)}
+.appsw{display:flex;gap:4px;background:var(--asphalt-2);border-radius:10px;padding:4px;margin:0 8px 14px}
+.appsw a{flex:1;text-align:center;padding:7px 6px;border-radius:7px;font-size:12px;font-weight:600;color:var(--muted-2);text-decoration:none;transition:.12s;cursor:pointer}
+.appsw a:hover{color:#fff}
+.appsw a.on{background:var(--gmc-red);color:#fff}
+.side .stat{background:var(--asphalt-2);border-radius:11px;padding:12px 13px;margin-bottom:9px}
+.side .stat .n{font-family:'Space Grotesk';font-weight:700;font-size:22px}
+.side .stat .l{font-size:11.5px;color:var(--muted-2);font-weight:500}
+.side .stat.hero{background:linear-gradient(135deg,var(--primary),#065F46)}
+.side-foot{margin-top:auto;padding:12px 8px 2px;border-top:1px solid var(--asphalt-3)}
+.side-foot .u{display:flex;align-items:center;gap:9px;font-size:13px}
+.side-foot .av{width:28px;height:28px;border-radius:50%;background:var(--gmc-red);display:grid;place-items:center;font-weight:600;font-size:12px;color:#fff;flex:none}
+.side-foot .lo{color:var(--muted-2);font-size:12px;margin-top:8px;cursor:pointer}
+.side-foot .lo:hover{color:#fff}
+
+.main{display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.topbar h1{font-family:'Space Grotesk';font-size:19px;font-weight:600;margin:0}
+.spacer{flex:1}
+.btn-primary{height:38px;padding:0 18px;background:var(--primary);color:#fff;border-radius:10px;font-weight:600;display:flex;align-items:center;gap:7px;transition:.12s}
+.btn-primary:hover{background:var(--primary-ink)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed}
+.btn-ghost{height:38px;padding:0 14px;border:1px solid var(--line);border-radius:10px;font-weight:600;color:var(--muted);background:#fff;white-space:nowrap}
+.btn-ghost:hover{background:var(--paper);color:var(--ink)}
+.btn-ghost:disabled{opacity:.45;cursor:not-allowed}
+.demo-flag{background:#FEF3C7;color:#92400E;font-weight:600;font-size:12.5px;padding:7px 22px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #FDE68A}
+
+/* three-pane workspace */
+.work{flex:1;display:grid;grid-template-columns:320px minmax(0,1fr) 430px;gap:0;overflow:hidden}
+@media(max-width:1500px){.work{grid-template-columns:290px minmax(0,1fr) 380px}}
+@media(max-width:1200px){.work{grid-template-columns:1fr;overflow:auto}.pane{max-height:none!important}}
+.pane{overflow:auto;padding:18px 20px}
+.pane+.pane{border-left:1px solid var(--line)}
+.pane.mid{background:var(--card)}
+.pane h3{font-family:'Space Grotesk';font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 12px}
+.pane h3 .n{color:var(--primary);font-weight:700}
+
+.fld{margin-bottom:11px}
+.fld label{display:block;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+.in{width:100%;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;outline:none}
+.in:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(4,120,87,.12)}
+textarea.in{height:auto;padding:8px 10px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0;cursor:pointer}
+
+.count{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 14px;margin-bottom:14px}
+.count .big{font-family:'Space Grotesk';font-size:30px;font-weight:700;line-height:1;color:var(--primary)}
+.count .lbl{font-size:12px;color:var(--muted);font-weight:500;margin-top:3px}
+.count .sk{margin-top:9px;padding-top:9px;border-top:1px solid var(--line-2);font-size:12px;color:#92400E}
+.count .sk b{color:#92400E}
+
+.rlist{border:1px solid var(--line);border-radius:10px;background:#fff;max-height:340px;overflow:auto}
+.rrow{display:flex;gap:8px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--line-2);font-size:12.5px}
+.rrow:last-child{border-bottom:none}
+.rrow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .em{color:var(--muted);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.rrow.off{opacity:.45}
+.rrow.bad{background:#FFFBEB}
+.rrow .why{color:#B45309;font-size:11px;white-space:nowrap}
+
+.tsel{border:1px solid var(--line);border-radius:9px;max-height:150px;overflow:auto;margin-bottom:12px}
+.titem{padding:8px 11px;border-bottom:1px solid var(--line-2);cursor:pointer;display:flex;gap:8px;align-items:center;font-size:13px}
+.titem:last-child{border-bottom:none}
+.titem:hover{background:var(--primary-soft)}
+.titem.on{background:var(--primary-soft);box-shadow:inset 3px 0 0 var(--primary)}
+.titem .nm{font-weight:600;flex:1}
+.titem .cat{font-size:11px;color:var(--muted);background:#fff;border:1px solid var(--line);padding:1px 7px;border-radius:20px}
+
+.bar{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:13px;margin-bottom:14px}
+.bar.ok{background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0}
+.bar.warn{background:#FFFBEB;color:#92400E;border:1px solid #FDE68A}
+.bar.err{background:#FEF2F2;color:#991B1B;border:1px solid #FECACA}
+.bar .sp{flex:1}
+.bar button{padding:6px 11px;border-radius:7px;font-weight:600;font-size:12px;border:1px solid var(--line);background:#fff;cursor:pointer}
+
+.pvhead{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.pvhead .who{flex:1;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pvhead button{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:#fff;font-weight:700}
+.pvhead button:disabled{opacity:.35}
+.seg{display:inline-flex;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:2px}
+.seg button{padding:4px 10px;border-radius:6px;font-weight:600;font-size:12px;color:var(--muted)}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
+.pvframe{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#f2f4f7}
+.pvframe iframe{display:block;width:100%;height:560px;border:0;background:#f2f4f7}
+.pvtext{border:1px solid var(--line);border-radius:10px;background:#fff;padding:14px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.55;white-space:pre-wrap;max-height:560px;overflow:auto}
+.warnline{font-size:12px;color:#B45309;margin-top:9px;line-height:1.5}
+
+.scrim{position:fixed;inset:0;background:rgba(15,17,21,.5);backdrop-filter:blur(2px);display:grid;place-items:center;padding:20px;z-index:50}
+.modal{background:var(--card);border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow:auto;box-shadow:var(--shadow-lg)}
+.modal-h{display:flex;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:1}
+.modal-h h2{font-family:'Space Grotesk';font-size:17px;margin:0}
+.modal-h .x{margin-left:auto;color:var(--muted);width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-size:20px}
+.modal-h .x:hover{background:var(--paper);color:var(--ink)}
+.modal-b{padding:20px 22px}
+.modal-f{display:flex;gap:10px;padding:16px 22px;border-top:1px solid var(--line);position:sticky;bottom:0;background:#fff}
+.prog{height:9px;border-radius:20px;background:var(--line);overflow:hidden;margin:14px 0 8px}
+.prog i{display:block;height:100%;background:var(--primary);transition:width .2s}
+.res{max-height:320px;overflow:auto;font-size:13px}
+.res .r{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid var(--line-2)}
+.res .r .ic{width:18px;flex:none;text-align:center}
+
+.login{height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,#1B1F27,#0C0E12)}
+.login .box{background:#fff;border-radius:18px;padding:34px 30px;width:360px;box-shadow:var(--shadow-lg)}
+.login .mark{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--primary),#10B981);display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:21px;color:#fff;margin-bottom:16px}
+.login h1{font-family:'Space Grotesk';font-size:20px;margin:0 0 4px}
+.login p{color:var(--muted);margin:0 0 20px;font-size:13px}
+.login .fld label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.login .fld input{width:100%;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:9px;outline:none}
+.login .btn-primary{width:100%;justify-content:center;margin-top:8px}
+.login .err{color:#B91C1C;font-size:12.5px;margin-top:10px;min-height:16px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="messaging.js"></script>
+<script src="email-editor.js"></script>
+<script src="messaging-ui.js"></script>
+<script>
+/* ============================================================
+   Giant Motor Cars — Email Blast (sold customers)
+   ============================================================ */
+const CFG=window.BLAST_CONFIG;
+const LIVE=!!(CFG.SUPABASE_URL&&CFG.SUPABASE_ANON_KEY);
+let sb=LIVE?supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY):null;
+
+const state={
+  user:null, rows:[], loaded:false,
+  f:{q:'',type:'',lien:'',sc:'',tag:'',from:'',to:'',pay:'',recourse:false,quiet:''},
+  dropped:new Set(),          // ids the user unticked by hand
+  quietSet:null,              // ids emailed inside the quiet window
+  templateId:null, subject:'',
+  editor:null, bodyHtml:'',
+  pvIdx:0, pvMode:'desktop', pvText:false,
+  sending:false, progress:0, stop:false, results:null, current:''
+};
+
+/* ---------- helpers ---------- */
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function userName(){return state.user?.name||'You';}
+function initials(n){return (n||'?').split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();}
+function fullName(r){return [r.first_name,r.last_name].filter(Boolean).join(' ');}
+function vehicle(r){return [r.veh_year,r.veh_make,r.veh_model].filter(Boolean).join(' ');}
+function monthKey(d){if(!d)return '';const t=Date.parse(d);if(isNaN(t))return '';const x=new Date(t);return x.getUTCFullYear()+'-'+String(x.getUTCMonth()+1).padStart(2,'0');}
+function hasSC(r){return (r.service_contract&&/^y/i.test(r.service_contract))||!!r.service_contract_company;}
+const RECOURSE=['westlake','agora','strike acceptance','shoreham','veros'];
+function isRecourse(r){const l=(r.lien_holder||'').toLowerCase();return !!l&&RECOURSE.some(k=>l.includes(k));}
+function hasPay(r){return r.note_payment_amount!=null&&String(r.note_payment_amount).trim()!=='';}
+function distinct(fn){return [...new Set(state.rows.map(fn).filter(Boolean))].sort();}
+
+/* ---------- data ---------- */
+async function load(){
+  if(LIVE){
+    let all=[],from=0;const page=1000;
+    while(true){
+      const {data,error}=await sb.from('sold_customers').select('*').order('sale_date',{ascending:false}).range(from,from+page-1);
+      if(error){alert('Load error: '+error.message);break;}
+      all=all.concat(data||[]);
+      if(!data||data.length<page)break;
+      from+=page;
+    }
+    state.rows=all;
+  } else state.rows=DEMO.slice();
+  state.loaded=true;
+  render();
+}
+
+/* Who already got an email inside the quiet window. Needs the messages
+   table; if it isn't there yet the filter just stays empty. */
+async function loadQuiet(){
+  const days=parseInt(state.f.quiet,10);
+  if(!days||!LIVE){state.quietSet=null;return;}
+  const cutoff=new Date(Date.now()-days*864e5).toISOString();
+  try{
+    const {data,error}=await sb.from('messages').select('record_id')
+      .eq('record_type','sold').eq('status','sent').gte('created_at',cutoff);
+    if(error)throw error;
+    state.quietSet=new Set((data||[]).map(m=>m.record_id));
+  }catch(e){
+    state.quietSet=null;
+    toast('Could not read send history — "not emailed recently" is off.');
+  }
+}
+
+/* ---------- audience ---------- */
+function matches(r){
+  const f=state.f;
+  if(f.q){
+    const q=f.q.toLowerCase();
+    const hay=[fullName(r),r.email,vehicle(r),r.lien_holder,r.vin].filter(Boolean).join(' ').toLowerCase();
+    if(!hay.includes(q))return false;
+  }
+  if(f.type&&r.sale_type!==f.type)return false;
+  if(f.lien&&r.lien_holder!==f.lien)return false;
+  if(f.sc==='yes'&&!hasSC(r))return false;
+  if(f.sc==='no'&&hasSC(r))return false;
+  if(f.tag==='in'&&!r.tag_in)return false;
+  if(f.tag==='pending'&&r.tag_in)return false;
+  if(f.pay==='yes'&&!hasPay(r))return false;
+  if(f.pay==='no'&&hasPay(r))return false;
+  if(f.recourse&&!isRecourse(r))return false;
+  if(f.from&&(!r.sale_date||r.sale_date<f.from))return false;
+  if(f.to&&(!r.sale_date||r.sale_date>f.to))return false;
+  if(state.quietSet&&state.quietSet.has(r.id))return false;
+  return true;
+}
+
+/* Filters -> triage -> manual unticks. */
+function audience(){
+  const pool=state.rows.filter(matches);
+  const {send,skip}=GMC.triage(pool);
+  const keep=send.filter(s=>!state.dropped.has(s.rec.id));
+  return {pool,send,skip,keep};
+}
+
+/* ---------- render ---------- */
+function render(){
+  if(LIVE&&!state.user)return renderLogin();
+  const a=audience();
+  document.getElementById('root').innerHTML=`
+  <div class="app">
+    <aside class="side">
+      <div class="brand">
+        <img class="mark" src="giantmotorcars-logo-for-dark-bg.svg"
+             alt="${esc(CFG.DEALER_NAME)}" width="486" height="231">
+        <div class="bn">Email Blast</div></div>
+      <div class="appsw">
+        <a href="${esc(CFG.LEADS_URL||'index.html')}">Leads</a>
+        <a href="${esc(CFG.SOLD_URL||'sold.html')}">Sold</a>
+        <a class="on">Blast</a>
+      </div>
+      <div class="stat hero"><div class="n" id="statKeep">${a.keep.length}</div><div class="l">Will receive this email</div></div>
+      <div class="stat"><div class="n" id="statPool">${a.pool.length}</div><div class="l">Match your filters</div></div>
+      <div class="stat"><div class="n">${GMC.sentToday()}</div><div class="l">Sent today (cap ${GMC.DAILY_CAP})</div></div>
+      <div class="side-foot"><div class="u"><div class="av">${initials(userName())}</div>
+        <div style="font-weight:600">${esc(userName())}</div></div>
+        ${LIVE?`<div class="lo" onclick="logout()">Sign out</div>`:''}</div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <h1>Email Blast</h1>
+        <div class="spacer"></div>
+        <button class="btn-ghost" onclick="GMCUI.openTemplates()">✉ Templates</button>
+        <button class="btn-ghost" onclick="saveAsTemplate()">Save as template</button>
+        <button class="btn-ghost" onclick="sendTest()">Send test to me</button>
+        <button class="btn-primary" id="sendBtn" onclick="startBlast()" ${a.keep.length?'':'disabled'}>
+          Send to ${a.keep.length} customer${a.keep.length===1?'':'s'}
+        </button>
+      </div>
+      ${LIVE?'':'<div class="demo-flag">● Demo mode — sample data. Add Supabase keys to go live.</div>'}
+
+      <div class="work">
+        <div class="pane" id="panAud">${audiencePane(a)}</div>
+        <div class="pane mid">${composerPane()}</div>
+        <div class="pane" id="panPv">${previewPane(a)}</div>
+      </div>
+    </div>
+  </div>`;
+
+  mountEditor();
+  paintPreview();
+}
+
+/* Split out so a keystroke can repaint these without rebuilding the
+   filter controls — re-rendering the pane would blur whatever you're typing in. */
+function countHtml(a){
+  return `<div class="big">${a.keep.length}</div>
+    <div class="lbl">recipients selected</div>
+    ${a.skip.length?`<div class="sk"><b>${a.skip.length}</b> excluded automatically — ${skipSummary(a.skip)}</div>`:''}`;
+}
+
+function listHtml(a){
+  return `${a.send.length||a.skip.length?'':'<div style="padding:22px;text-align:center;color:var(--muted);font-size:13px">Nobody matches these filters.</div>'}
+    ${a.send.map(s=>{
+      const off=state.dropped.has(s.rec.id);
+      return `<div class="rrow ${off?'off':''}">
+        <input type="checkbox" ${off?'':'checked'} onchange="toggleOne('${esc(String(s.rec.id))}')">
+        <span class="nm">${esc(s.name)}</span>
+        <span class="em">${esc(s.email)}</span></div>`;
+    }).join('')}
+    ${a.skip.map(s=>`<div class="rrow bad">
+      <span style="width:13px">⚠</span>
+      <span class="nm">${esc(s.name)}</span>
+      <span class="why">${esc(s.why)}</span></div>`).join('')}`;
+}
+
+function audiencePane(a){
+  const f=state.f;
+  return `
+  <h3>Audience</h3>
+  <div class="count" id="audCount">${countHtml(a)}</div>
+
+  <div class="fld"><label>Search</label>
+    <input class="in" value="${esc(f.q)}" placeholder="Name, email, vehicle, VIN…"
+      oninput="state.f.q=this.value;refreshSoft()"></div>
+
+  <div class="row2">
+    <div class="fld"><label>Sold from</label><input class="in" type="date" value="${esc(f.from)}" onchange="state.f.from=this.value;refreshSoft()"></div>
+    <div class="fld"><label>Sold to</label><input class="in" type="date" value="${esc(f.to)}" onchange="state.f.to=this.value;refreshSoft()"></div>
+  </div>
+
+  <div class="fld"><label>Sale type</label>
+    <select class="in" onchange="state.f.type=this.value;refreshSoft()">
+      <option value="">All sale types</option>
+      ${distinct(r=>r.sale_type).map(t=>`<option ${f.type===t?'selected':''}>${esc(t)}</option>`).join('')}
+    </select></div>
+
+  <div class="fld"><label>Lienholder</label>
+    <select class="in" onchange="state.f.lien=this.value;refreshSoft()">
+      <option value="">All lienholders</option>
+      ${distinct(r=>r.lien_holder).map(t=>`<option ${f.lien===t?'selected':''}>${esc(t)}</option>`).join('')}
+    </select></div>
+
+  <div class="row2">
+    <div class="fld"><label>Service contract</label>
+      <select class="in" onchange="state.f.sc=this.value;refreshSoft()">
+        <option value="">Any</option>
+        <option value="yes" ${f.sc==='yes'?'selected':''}>Has one</option>
+        <option value="no" ${f.sc==='no'?'selected':''}>None</option>
+      </select></div>
+    <div class="fld"><label>Tag</label>
+      <select class="in" onchange="state.f.tag=this.value;refreshSoft()">
+        <option value="">Any</option>
+        <option value="pending" ${f.tag==='pending'?'selected':''}>Pending</option>
+        <option value="in" ${f.tag==='in'?'selected':''}>Tag in</option>
+      </select></div>
+  </div>
+
+  <div class="fld"><label>Payment data</label>
+    <select class="in" onchange="state.f.pay=this.value;refreshSoft()">
+      <option value="">Any</option>
+      <option value="yes" ${f.pay==='yes'?'selected':''}>Has a payment amount (BHPH / financed)</option>
+      <option value="no" ${f.pay==='no'?'selected':''}>No payment amount (cash / outside)</option>
+    </select>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.45">
+      Payment templates read oddly for cash buyers — narrow to “has a payment amount” before using one.
+    </div></div>
+
+  <div class="fld"><label>Leave alone if emailed recently</label>
+    <select class="in" onchange="state.f.quiet=this.value;refreshQuiet()">
+      <option value="">Don't exclude anyone</option>
+      <option value="7"  ${f.quiet==='7'?'selected':''}>Emailed in last 7 days</option>
+      <option value="14" ${f.quiet==='14'?'selected':''}>Emailed in last 14 days</option>
+      <option value="30" ${f.quiet==='30'?'selected':''}>Emailed in last 30 days</option>
+      <option value="90" ${f.quiet==='90'?'selected':''}>Emailed in last 90 days</option>
+    </select></div>
+
+  <label class="chk"><input type="checkbox" ${f.recourse?'checked':''}
+    onchange="state.f.recourse=this.checked;refreshSoft()"> Recourse lienholders only</label>
+
+  <div style="display:flex;gap:8px;margin:14px 0 10px">
+    <button class="btn-ghost" style="flex:1;height:32px" onclick="allOn()">Tick all</button>
+    <button class="btn-ghost" style="flex:1;height:32px" onclick="allOff()">Untick all</button>
+    <button class="btn-ghost" style="height:32px" onclick="resetFilters()">Reset</button>
+  </div>
+
+  <h3>Recipients <span class="n" id="audN">${a.keep.length}</span></h3>
+  <div class="rlist" id="audList">${listHtml(a)}</div>`;
+}
+
+function skipSummary(skip){
+  const c={};
+  skip.forEach(s=>{
+    const k=/no email/i.test(s.why)?'no address'
+      :/invalid/i.test(s.why)?'bad address'
+      :/unsub/i.test(s.why)?'unsubscribed'
+      :/duplicate/i.test(s.why)?'duplicate address':'other';
+    c[k]=(c[k]||0)+1;
+  });
+  return Object.entries(c).map(([k,n])=>`${n} ${k}`).join(', ');
+}
+
+function composerPane(){
+  return `
+  <h3>Message</h3>
+  ${gmailBar()}
+  <div class="fld"><label>Template</label>
+    <div class="tsel">
+      <div class="titem ${state.templateId===null?'on':''}" onclick="pickTemplate(null)">
+        <span class="nm">✎ Start from scratch</span></div>
+      ${GMC.templates.map(t=>`
+        <div class="titem ${state.templateId===t.id?'on':''}" onclick="pickTemplate('${esc(String(t.id))}')">
+          <span class="nm">${esc(t.name)}</span>
+          ${t.category?`<span class="cat">${esc(t.category)}</span>`:''}
+        </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="fld"><label>Subject</label>
+    <input class="in" id="subj" value="${esc(state.subject)}"
+      placeholder="Subject line — {{tokens}} work here too"
+      oninput="state.subject=this.value;schedulePreview()"></div>
+
+  <div class="fld"><label>Body</label><div id="edHost"></div></div>
+  <div style="font-size:11.5px;color:var(--muted);line-height:1.55">
+    Pick a field from <b>Insert field…</b> to drop in a merge token. Click a token to set what
+    it says when a customer is missing that value. Images are attached to each email and shrunk
+    to fit — no image hosting needed.
+  </div>`;
+}
+
+function gmailBar(){
+  if(!GMC.gmailConfigured())
+    return `<div class="bar err"><span>⚠</span><span class="sp">Gmail isn't set up — add <b>GOOGLE_CLIENT_ID</b> to the config block. See gmail-setup.md.</span></div>`;
+  if(GMC.gmailConnected()){
+    const n=GMC.sentToday();
+    return `<div class="bar ok"><span>✓</span><span class="sp">Sending as <b>${esc(GMC.gmailAddress()||'your Gmail')}</b>${n?` · ${n} sent today`:''}</span>
+      <button onclick="GMCUI.disconnect()">Disconnect</button></div>`;
+  }
+  return `<div class="bar warn"><span>◷</span><span class="sp">Not connected to Gmail yet.</span>
+    <button onclick="GMCUI.connect()">Connect Gmail</button></div>`;
+}
+
+function whoHtml(a){
+  const n=a.keep.length;
+  const i=Math.min(state.pvIdx,Math.max(0,n-1));
+  const who=n?a.keep[i]:null;
+  return who
+    ? `<b>${esc(who.name)}</b> &lt;${esc(who.email)}&gt; <span style="color:var(--muted)">· ${i+1} of ${n}</span>`
+    : '<span style="color:var(--muted)">No recipients selected</span>';
+}
+
+/* Recipient line and arrows, without disturbing the composer. */
+function paintWho(a){
+  a=a||audience();
+  const w=document.getElementById('pvWho');
+  if(w)w.innerHTML=whoHtml(a);
+  const i=Math.min(state.pvIdx,Math.max(0,a.keep.length-1));
+  const p=document.getElementById('pvPrev'),nx=document.getElementById('pvNext');
+  if(p) p.disabled=i<=0;
+  if(nx)nx.disabled=i>=a.keep.length-1;
+}
+
+function previewPane(a){
+  const n=a.keep.length;
+  const i=Math.min(state.pvIdx,Math.max(0,n-1));
+  return `
+  <h3>Preview</h3>
+  <div class="pvhead">
+    <button id="pvPrev" onclick="stepPv(-1)" ${i<=0?'disabled':''}>‹</button>
+    <button id="pvNext" onclick="stepPv(1)" ${i>=n-1?'disabled':''}>›</button>
+    <div class="who" id="pvWho">${whoHtml(a)}</div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <div class="seg">
+      <button class="${state.pvMode==='desktop'&&!state.pvText?'on':''}" onclick="switchPv('desktop',false)">Desktop</button>
+      <button class="${state.pvMode==='mobile'&&!state.pvText?'on':''}" onclick="switchPv('mobile',false)">Mobile</button>
+      <button class="${state.pvText?'on':''}" onclick="switchPv(state.pvMode,true)">Plain text</button>
+    </div>
+  </div>
+  <div id="pvBox"></div>
+  <div class="warnline" id="pvWarn"></div>`;
+}
+
+/* ---------- editor ---------- */
+function mountEditor(){
+  const host=document.getElementById('edHost');
+  if(!host)return;
+  state.editor=GMCEditor.mount(host,{
+    html:state.bodyHtml,
+    fields:GMC.fieldsFor('sold'),
+    accent:CFG.EMAIL_ACCENT,
+    minHeight:'320px',
+    placeholder:'Write your message. Use the toolbar for formatting and images.',
+    onChange:()=>{state.bodyHtml=state.editor.getHtml();schedulePreview();}
+  });
+}
+
+/* ---------- preview ---------- */
+function renderFor(rec){
+  const subject=GMC.renderTemplate(state.subject,rec,'sold');
+  const body=GMC.renderTemplate(state.bodyHtml,rec,'sold');
+  return {subject,body};
+}
+
+/* Typing shouldn't re-render the email on every character. */
+let pvTimer=null;
+function schedulePreview(){
+  clearTimeout(pvTimer);
+  pvTimer=setTimeout(paintPreview,180);
+}
+
+function paintPreview(){
+  const box=document.getElementById('pvBox');
+  if(!box)return;
+  const a=audience();
+  const i=Math.min(state.pvIdx,Math.max(0,a.keep.length-1));
+  const rec=a.keep.length?a.keep[i].rec:(a.send[0]?a.send[0].rec:state.rows[0]);
+  if(!rec){box.innerHTML='<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">Nothing to preview yet.</div>';return;}
+
+  const {subject,body}=renderFor(rec);
+  const html=GMC.wrapEmail(body||'<p style="color:#9AA3AF">Your message will appear here.</p>',{subject});
+
+  if(state.pvText){
+    box.innerHTML=`<div class="pvtext">${esc('Subject: '+(subject||'(no subject)'))}\n\n${esc(GMC.htmlToText(html))}</div>`;
+  }else{
+    // Keep the iframe across repaints; recreating it flickers and reloads.
+    let frame=box.querySelector('iframe');
+    if(!frame){
+      box.innerHTML=`
+        <div id="pvSubj" style="font-size:12.5px;font-weight:600;padding:0 0 8px"></div>
+        <div class="pvframe"><iframe sandbox="" title="Email preview"></iframe></div>`;
+      frame=box.querySelector('iframe');
+    }
+    const subjEl=box.querySelector('#pvSubj');
+    if(subjEl)subjEl.innerHTML=subject?esc(subject):'<span style="color:var(--muted);font-weight:400">(no subject)</span>';
+    const wrap=box.querySelector('.pvframe');
+    if(wrap)wrap.style.cssText=state.pvMode==='mobile'?'width:390px;margin:0 auto':'';
+    if(frame.srcdoc!==html)frame.srcdoc=html;
+  }
+  paintWarnings(a);
+}
+
+function paintWarnings(a){
+  const el=document.getElementById('pvWarn');
+  if(!el)return;
+  const parts=[];
+  const src=state.subject+'\n'+state.bodyHtml;
+
+  if(a.keep.length){
+    const blank=new Map(),fell=new Map(),unknown=new Set();
+    a.keep.forEach(r=>{
+      const seen=new Set();
+      GMC.missingTokens(src,r.rec,'sold').forEach(m=>{
+        if(m.reason==='unknown')return unknown.add(m.token);
+        if(seen.has(m.token))return;
+        seen.add(m.token);
+        (m.reason==='defaulted'?fell:blank).set(m.token,((m.reason==='defaulted'?fell:blank).get(m.token)||0)+1);
+      });
+    });
+    if(unknown.size)parts.push(`⚠ {{${[...unknown][0]}}} isn't a real field — it will print as-is.`);
+    [...blank.entries()].slice(0,2).forEach(([t,n])=>parts.push(`⚠ {{${t}}} is empty for ${n} of ${a.keep.length} — click the token to add fallback text.`));
+    if(fell.size){
+      const worst=[...fell.entries()].sort((x,y)=>y[1]-x[1])[0];
+      parts.push(`{{${worst[0]}}} falls back to your substitute text for ${worst[1]} recipient${worst[1]===1?'':'s'}.`);
+    }
+  }
+
+  const {images}=GMCEditor.extractImages(state.bodyHtml);
+  if(images.length){
+    const bytes=images.reduce((n,im)=>n+im.b64.length*0.75,0);
+    const per=(bytes/1048576);
+    parts.push(`${images.length} image${images.length===1?'':'s'} · about ${per<0.1?'<0.1':per.toFixed(1)} MB added to every email` +
+      (per>2?` — that's heavy for a blast, consider fewer or smaller images.`:''));
+  }
+
+  const cap=GMC.sentToday()+a.keep.length;
+  if(cap>GMC.DAILY_CAP)parts.push(`⚠ This would put you at ${cap} sends today, past Gmail's ~${GMC.DAILY_CAP} daily cap. Split it across days.`);
+
+  el.innerHTML=parts.map(esc).join('<br>');
+}
+
+function stepPv(d){
+  const a=audience();
+  state.pvIdx=Math.max(0,Math.min(a.keep.length-1,state.pvIdx+d));
+  paintWho(a);
+  paintPreview();
+}
+
+/* Mode switch redraws the preview pane only, so the toggle reflects state. */
+function switchPv(mode,text){
+  state.pvMode=mode;state.pvText=!!text;
+  const p=document.getElementById('panPv');
+  if(p)p.innerHTML=previewPane(audience());
+  paintPreview();
+}
+
+/* ---------- filter plumbing ---------- */
+/* Repaint only what a filter change actually affects: the counts, the
+   recipient list and the preview. Rebuilding the page here would blur the
+   search box mid-word and tear down the rich text editor on every keystroke. */
+function refreshSoft(){
+  const a=audience();
+  const el=id=>document.getElementById(id);
+
+  const keep=el('statKeep');   if(keep)keep.textContent=a.keep.length;
+  const pool=el('statPool');   if(pool)pool.textContent=a.pool.length;
+  const cnt =el('audCount');   if(cnt) cnt.innerHTML=countHtml(a);
+  const num =el('audN');       if(num) num.textContent=a.keep.length;
+
+  const list=el('audList');
+  if(list){const top=list.scrollTop;list.innerHTML=listHtml(a);list.scrollTop=top;}
+
+  const btn=el('sendBtn');
+  if(btn){
+    btn.disabled=!a.keep.length;
+    btn.textContent=`Send to ${a.keep.length} customer${a.keep.length===1?'':'s'}`;
+  }
+
+  if(state.pvIdx>Math.max(0,a.keep.length-1))state.pvIdx=0;
+  paintWho(a);
+  schedulePreview();
+}
+
+/* Full rebuild — only when the controls themselves have to change. */
+function refresh(){
+  if(state.editor)state.bodyHtml=state.editor.getHtml();
+  state.pvIdx=0;
+  render();
+}
+async function refreshQuiet(){await loadQuiet();refreshSoft();}
+function resetFilters(){state.f={q:'',type:'',lien:'',sc:'',tag:'',from:'',to:'',pay:'',recourse:false,quiet:''};state.quietSet=null;state.dropped.clear();refresh();}
+function toggleOne(id){
+  if(state.dropped.has(id))state.dropped.delete(id);else state.dropped.add(id);
+  refreshSoft();
+}
+function allOn(){state.dropped.clear();refreshSoft();}
+function allOff(){audience().send.forEach(s=>state.dropped.add(s.rec.id));refreshSoft();}
+
+/* ---------- templates ---------- */
+function pickTemplate(id){
+  const t=id?GMC.templates.find(x=>String(x.id)===String(id)):null;
+  state.templateId=t?t.id:null;
+  if(t){
+    state.subject=t.subject||'';
+    // Older templates are plain text; the editor lifts them into HTML.
+    state.bodyHtml=GMC.looksLikeHtml(t.body)?t.body:GMCEditor.textToEditable(t.body||'');
+  }
+  render();
+}
+
+async function saveAsTemplate(){
+  if(state.editor)state.bodyHtml=state.editor.getHtml();
+  if(!state.bodyHtml.trim())return alert('Write the message first.');
+  const name=prompt('Save this message as a template called:',
+    state.templateId?(GMC.templates.find(t=>t.id===state.templateId)||{}).name||'':'');
+  if(!name)return;
+  const existing=GMC.templates.find(t=>t.name===name);
+  try{
+    await GMC.saveTemplate({
+      id:existing?existing.id:undefined,
+      name,
+      category:prompt('Category (optional):','Campaign')||'',
+      subject:state.subject,
+      body:state.bodyHtml
+    });
+    toast(existing?'Template updated.':'Template saved.');
+    render();
+  }catch(e){alert('Could not save: '+e.message);}
+}
+
+/* ---------- sending ---------- */
+function composed(){
+  if(state.editor)state.bodyHtml=state.editor.getHtml();
+  // Images are identical for every recipient, so lift them out once.
+  const {html,images}=GMCEditor.extractImages(state.bodyHtml);
+  return {html,images};
+}
+
+async function sendTest(){
+  if(state.editor)state.bodyHtml=state.editor.getHtml();
+  if(!state.subject.trim()&&!state.bodyHtml.trim())return alert('Write something first.');
+  if(!GMC.gmailConfigured())return alert('Gmail is not set up yet. See gmail-setup.md.');
+  try{await GMC.ensureToken(true);}catch(e){return alert('Could not connect to Gmail:\n\n'+e.message);}
+
+  const a=audience();
+  const rec=(a.keep[0]||a.send[0]||{rec:state.rows[0]}).rec;
+  if(!rec)return alert('No customer to build a test from.');
+
+  const {html,images}=composed();
+  const subject=GMC.renderTemplate(state.subject,rec,'sold');
+  const body=GMC.renderTemplate(html,rec,'sold');
+  const to=GMC.gmailAddress();
+  if(!to)return alert('Could not work out your own address — reconnect Gmail.');
+
+  try{
+    await GMC.sendOne({
+      to, toName:userName(),
+      subject:'[TEST] '+(subject||'(no subject)'),
+      html:GMC.wrapEmail(body,{subject}),
+      images, fromName:CFG.DEALER_NAME
+    });
+    GMC.bumpSentCount(1);
+    toast('Test sent to '+to+' — merged with '+fullName(rec)+"'s details.");
+    render();
+  }catch(e){alert('Test failed:\n\n'+e.message);}
+}
+
+async function startBlast(){
+  if(state.editor)state.bodyHtml=state.editor.getHtml();
+  const a=audience();
+  if(!a.keep.length)return;
+  if(!state.bodyHtml.replace(/<[^>]+>/g,'').trim()&&!/<img/i.test(state.bodyHtml))
+    return alert('The message is empty.');
+  if(!state.subject.trim()&&!confirm('This email has no subject line. Send anyway?'))return;
+  if(!GMC.gmailConfigured())return alert('Gmail is not set up yet. See gmail-setup.md.');
+  try{await GMC.ensureToken(true);}catch(e){return alert('Could not connect to Gmail:\n\n'+e.message);}
+
+  const {html,images}=composed();
+  const mb=images.reduce((n,im)=>n+im.b64.length*0.75,0)/1048576;
+  const today=GMC.sentToday();
+
+  const ok=confirm(
+    `Send ${a.keep.length} individual email${a.keep.length===1?'':'s'} as ${GMC.gmailAddress()}?\n\n`+
+    `Subject: ${state.subject||'(none)'}\n`+
+    (images.length?`Images: ${images.length} (~${mb.toFixed(1)} MB per email)\n`:'')+
+    `Already sent today: ${today} of about ${GMC.DAILY_CAP}\n\n`+
+    `Each message goes out separately — recipients never see each other.`);
+  if(!ok)return;
+
+  state.sending=true;state.stop=false;state.progress=0;state.results=null;
+  drawSending(a.keep.length);
+
+  const batchId=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now());
+  const sent=[],failed=[];
+
+  for(const r of a.keep){
+    if(state.stop)break;
+    const subject=GMC.renderTemplate(state.subject,r.rec,'sold');
+    const bodyHtml=GMC.renderTemplate(html,r.rec,'sold');
+    const full=GMC.wrapEmail(bodyHtml,{subject});
+    const text=GMC.htmlToText(full);
+    state.current=r.name;
+    drawSending(a.keep.length);
+
+    try{
+      const res=await GMC.sendOne({
+        to:r.email,toName:r.name,subject,html:full,text,images,
+        fromName:CFG.DEALER_NAME
+      });
+      sent.push(r);
+      GMC.bumpSentCount(1);
+      await GMC.logMessage({
+        record_type:'sold',record_id:r.rec.id,template_id:state.templateId||null,
+        channel:'email',to_address:r.email,to_name:r.name,
+        subject,body:text,status:'sent',
+        provider_message_id:res.id||null,provider_thread_id:res.threadId||null,
+        batch_id:batchId,sent_by:userName(),from_address:GMC.gmailAddress(),
+        sent_at:new Date().toISOString()
+      });
+    }catch(e){
+      const msg=e.message==='AUTH_EXPIRED'?'Gmail session expired — reconnect and send the rest.':e.message;
+      failed.push({...r,error:msg});
+      await GMC.logMessage({
+        record_type:'sold',record_id:r.rec.id,template_id:state.templateId||null,
+        channel:'email',to_address:r.email,to_name:r.name,
+        subject,body:text,status:'failed',error:msg,
+        batch_id:batchId,sent_by:userName()
+      });
+      if(e.message==='AUTH_EXPIRED')break;
+    }
+    state.progress++;
+    if(state.progress<a.keep.length)await new Promise(z=>setTimeout(z,GMC.GAP_MS));
+  }
+
+  a.keep.slice(state.progress).forEach(r=>{
+    if(!sent.includes(r)&&!failed.find(f=>f.rec===r.rec))
+      failed.push({...r,error:state.stop?'Stopped before sending.':'Not attempted — sending stopped early.'});
+  });
+
+  state.sending=false;
+  state.results={sent,failed,batchId};
+  drawResults();
+}
+
+function drawSending(total){
+  const done=state.progress;
+  modal(`
+  <div class="modal-h"><h2>Sending…</h2></div>
+  <div class="modal-b">
+    <div style="font-size:13.5px;color:var(--muted)">${done} of ${total} sent${state.current?` · ${esc(state.current)}`:''}</div>
+    <div class="prog"><i style="width:${total?(done/total*100):0}%"></i></div>
+    <div style="font-size:12.5px;color:var(--muted)">Keep this tab open — sending happens in the browser.</div>
+  </div>
+  <div class="modal-f"><div style="flex:1"></div>
+    <button class="btn-ghost" onclick="state.stop=true">Stop after this one</button></div>`);
+}
+
+function drawResults(){
+  const {sent,failed}=state.results;
+  modal(`
+  <div class="modal-h">
+    <div><h2>${failed.length?'Finished with problems':'All sent'}</h2>
+      <div style="font-size:12.5px;color:var(--muted);margin-top:3px">${sent.length} sent${failed.length?` · ${failed.length} failed`:''}</div></div>
+    <button class="x" onclick="closeResults()">×</button>
+  </div>
+  <div class="modal-b">
+    <div class="res">
+      ${sent.map(s=>`<div class="r"><span class="ic" style="color:#059669">✓</span>
+        <span>${esc(s.name)} <span style="color:var(--muted)">&lt;${esc(s.email)}&gt;</span></span></div>`).join('')}
+      ${failed.map(f=>`<div class="r"><span class="ic" style="color:#DC2626">✕</span>
+        <span>${esc(f.name)} <span style="color:var(--muted)">&lt;${esc(f.email)}&gt;</span>
+        <div style="color:#B91C1C;font-size:12px">${esc(f.error)}</div></span></div>`).join('')}
+    </div>
+  </div>
+  <div class="modal-f">
+    <button class="btn-ghost" onclick="downloadResults()">Download CSV</button>
+    ${failed.length?`<button class="btn-ghost" onclick="retryFailed()">Retry ${failed.length} failed</button>`:''}
+    <div style="flex:1"></div>
+    <button class="btn-primary" onclick="closeResults()">Done</button>
+  </div>`);
+}
+
+/* Narrow the audience to the ones that failed, so Send runs just those. */
+function retryFailed(){
+  const keepIds=new Set(state.results.failed.map(f=>f.rec.id));
+  state.dropped=new Set(state.rows.filter(r=>!keepIds.has(r.id)).map(r=>r.id));
+  state.results=null;
+  closeModal();
+  render();
+  toast('Audience narrowed to the '+keepIds.size+' that failed. Press Send when ready.');
+}
+
+function downloadResults(){
+  const {sent,failed}=state.results;
+  const rows=[['status','name','email','error']]
+    .concat(sent.map(s=>['sent',s.name,s.email,'']))
+    .concat(failed.map(f=>['failed',f.name,f.email,f.error]));
+  const csv=rows.map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='blast_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+function closeResults(){state.results=null;closeModal();render();}
+
+/* ---------- modal / toast ---------- */
+function modal(html){
+  let s=document.getElementById('scrim');
+  if(!s){s=document.createElement('div');s.id='scrim';s.className='scrim';document.body.appendChild(s);}
+  s.innerHTML=`<div class="modal">${html}</div>`;
+}
+function closeModal(){const s=document.getElementById('scrim');if(s)s.remove();}
+function toast(m){
+  const t=document.createElement('div');t.textContent=m;
+  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--asphalt);color:#fff;padding:11px 18px;border-radius:10px;font-weight:600;font-size:13px;box-shadow:var(--shadow-lg);z-index:100;max-width:80vw;text-align:center';
+  document.body.appendChild(t);setTimeout(()=>t.remove(),3200);
+}
+
+/* ---------- auth ---------- */
+function renderLogin(){document.getElementById('root').innerHTML=`
+  <div class="login"><div class="box"><div class="mark">G</div>
+    <h1>${esc(CFG.DEALER_NAME)}</h1><p>Email Blast — sign in</p>
+    <div class="fld"><label>Email</label><input id="li_e" type="email" placeholder="you@dealer.com"></div>
+    <div class="fld" style="margin-top:12px"><label>Password</label><input id="li_p" type="password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-primary" onclick="doLogin()">Sign in</button><div class="err" id="li_err"></div></div></div>`;}
+async function doLogin(){
+  const email=document.getElementById('li_e').value.trim(),password=document.getElementById('li_p').value;
+  const {error}=await sb.auth.signInWithPassword({email,password});
+  if(error){document.getElementById('li_err').textContent=error.message;return;}
+  state.user={name:email.split('@')[0],email};load();
+}
+async function logout(){await sb.auth.signOut();state.user=null;render();}
+async function initAuth(){const {data}=await sb.auth.getSession();if(data.session){const e=data.session.user.email;state.user={name:e.split('@')[0],email:e};}}
+
+/* ---------- demo data ---------- */
+const DEMO=[
+ {id:'s1',first_name:'Marcus',last_name:'Johnson',cell_phone:'8135550142',email:'mjohnson@example.com',sale_date:'2026-07-28',sale_type:'Retail',veh_year:'2020',veh_make:'Ford',veh_model:'F-150 XLT',vin_last6:'D12345',first_payment_date:'2026-08-28',note_payment_amount:512.43,pay_schedule:'Monthly',num_payments:'72',current_due_date:'2026-09-28',service_contract:'Yes',service_contract_company:'GWC Warranty',lien_holder:'Westlake Financial',tag_in:true},
+ {id:'s2',first_name:'Latoya',last_name:'Williams',cell_phone:'8135550199',email:'lwilliams@example.com',sale_date:'2026-07-30',sale_type:'BHPH',veh_year:'2019',veh_make:'Honda',veh_model:'Civic',vin_last6:'512346',first_payment_date:'2026-08-15',note_payment_amount:275.00,pay_schedule:'Bi-Weekly',num_payments:'104',current_due_date:'2026-09-12',service_contract:'No',lien_holder:'',cobuyer_first:'Andre',cobuyer_last:'Williams'},
+ {id:'s3',first_name:'David',last_name:'Chen',cell_phone:'8135550177',email:'dchen@example.com',sale_date:'2026-08-01',sale_type:'Outside Finance',veh_year:'2021',veh_make:'Toyota',veh_model:'Camry SE',vin_last6:'512347',first_payment_date:'2026-09-01',note_payment_amount:441.18,pay_schedule:'Monthly',num_payments:'60',current_due_date:'2026-10-01',service_contract:'Yes',service_contract_company:'SecureOne',lien_holder:'Capital One Auto'},
+ {id:'s4',first_name:'Angela',last_name:'Ruiz',home_phone:'8135550130',email:'',sale_date:'2026-08-02',sale_type:'Cash',veh_year:'2018',veh_make:'Nissan',veh_model:'Rogue',vin_last6:'312348',service_contract:'No',lien_holder:''},
+ {id:'s5',first_name:'James',last_name:'Patterson',cell_phone:'8135550155',email:'jpatt@example.com',sale_date:'2026-08-03',sale_type:'Retail',veh_year:'2022',veh_make:'Jeep',veh_model:'Grand Cherokee',vin_last6:'512349',first_payment_date:'2026-09-03',note_payment_amount:689.75,pay_schedule:'Monthly',num_payments:'75',current_due_date:'2026-09-03',service_contract:'Yes',service_contract_company:'GWC Warranty',lien_holder:'Ally Financial',email_opt_out:true},
+];
+
+/* ---------- boot ---------- */
+(async function(){
+  if(LIVE){await initAuth();}
+  GMC.init({
+    sb, LIVE, recordType:'sold', config:CFG,
+    getUserName:userName
+  });
+  await GMC.loadTemplates();
+  await load();
+})();
+</script>
+</body>
+</html>

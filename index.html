@@ -14,6 +14,7 @@
     SUPABASE_URL:      "https://rnxjiiceacpdswlvjfwp.supabase.co",
     SUPABASE_ANON_KEY: "sb_publishable_mTvsidLyuX3m_Q_Ma-KmJw_PgTH5hcZ",
     SOLD_URL:          "sold.html",   // link to the Sold Customers page
+    BLAST_URL:         "blast.html",  // link to the Email Blast page
     DEALER_NAME:       "Giant Motor Cars",
     DEALER_PHONE:      "813-222-0010",
 
@@ -32,7 +33,8 @@
 
 <style>
 :root{
-  --asphalt:#14171C; --asphalt-2:#1B1F27; --asphalt-3:#242A34;
+  --asphalt:#161b22; --asphalt-2:#1c2430; --asphalt-3:#2a3341;
+  --gmc-red:#db2229; --gmc-red-hi:#e11d3c;
   --ink:#0F1115; --muted:#6B7280; --muted-2:#9AA3AF;
   --paper:#F4F5F7; --card:#FFFFFF; --line:#E4E7EC; --line-2:#EDEFF3;
   --primary:#2F6BFF; --primary-ink:#1E4FCC; --primary-soft:#EAF0FF;
@@ -55,26 +57,27 @@ input,select,textarea{font-family:inherit;font-size:14px}
 
 /* ---------- shell ---------- */
 .app{display:grid;grid-template-columns:230px 1fr;height:100vh;overflow:hidden}
-.side{background:var(--asphalt);color:#fff;display:flex;flex-direction:column;padding:20px 14px}
-.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px}
-.brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#5B8CFF);
-  display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:17px;color:#fff;flex:none}
-.brand .bn{font-family:'Space Grotesk';font-weight:600;font-size:15px;line-height:1.15}
-.brand .bn small{display:block;font-family:'Inter';font-weight:400;font-size:11px;color:var(--muted-2)}
+.side{background:var(--asphalt);color:#fff;display:flex;flex-direction:column;padding:20px 14px;
+  border-right:1px solid var(--asphalt-3)}
+.brand{display:block;padding:2px 8px 18px;text-align:center}
+.brand .mark{display:block;width:100%;max-width:150px;height:auto;margin:0 auto 10px;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
+.brand .bn{font-family:'Inter';font-weight:600;font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted-2)}
 .appsw{display:flex;gap:4px;background:var(--asphalt-2);border-radius:10px;padding:4px;margin:0 8px 14px}
 .appsw a{flex:1;text-align:center;padding:7px 8px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--muted-2);text-decoration:none;transition:.12s}
 .appsw a:hover{color:#fff}
-.appsw a.on{background:var(--asphalt-3);color:#fff}
+.appsw a.on{background:var(--gmc-red);color:#fff}
 .nav{display:flex;flex-direction:column;gap:2px;margin-top:6px}
 .nav button{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;
   color:#C3CAD6;font-weight:500;font-size:13.5px;text-align:left;transition:.12s}
 .nav button:hover{background:var(--asphalt-2);color:#fff}
-.nav button.on{background:var(--asphalt-3);color:#fff}
+.nav button.on{background:var(--asphalt-3);color:#fff;box-shadow:inset 3px 0 0 var(--gmc-red)}
 .nav .dot{width:8px;height:8px;border-radius:50%;flex:none}
 .nav .ct{margin-left:auto;font-size:12px;color:var(--muted-2);font-variant-numeric:tabular-nums}
 .side-foot{margin-top:auto;padding:12px 8px 2px;border-top:1px solid var(--asphalt-3)}
 .side-foot .u{display:flex;align-items:center;gap:9px;font-size:13px}
-.side-foot .av{width:28px;height:28px;border-radius:50%;background:var(--primary);display:grid;place-items:center;
+.side-foot .av{width:28px;height:28px;border-radius:50%;background:var(--gmc-red);display:grid;place-items:center;
   font-weight:600;font-size:12px;color:#fff;flex:none}
 .side-foot .lo{color:var(--muted-2);font-size:12px;margin-top:8px}
 .side-foot .lo:hover{color:#fff}
@@ -180,15 +183,27 @@ tr:hover td{background:#FAFBFC;cursor:pointer}
 .addnote input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
 
 /* ---------- login ---------- */
-.login{height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,#1B1F27,#0C0E12)}
-.login .box{background:#fff;border-radius:18px;padding:34px 30px;width:360px;box-shadow:var(--shadow-lg)}
-.login .mark{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--primary),#5B8CFF);
-  display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:22px;color:#fff;margin-bottom:16px}
-.login h1{font-family:'Space Grotesk';font-size:21px;margin:0 0 4px}
-.login p{color:var(--muted);margin:0 0 22px;font-size:13.5px}
-.login .fld{margin-bottom:13px}
-.login .btn-primary{width:100%;justify-content:center;height:42px;margin-top:6px}
-.login .err{color:var(--cold);font-size:13px;margin-top:12px;min-height:18px}
+.login{min-height:100vh;display:grid;place-items:center;padding:32px 20px;
+  background:radial-gradient(1100px 550px at 50% -12%,#1b2531 0%,transparent 62%),#0d1117}
+.login .box{background:#161b22;border:1px solid #2a3341;border-top:3px solid #db2229;
+  border-radius:14px;padding:34px 30px;width:100%;max-width:380px;
+  box-shadow:0 12px 34px rgba(0,0,0,.42)}
+.login .mark{display:block;width:100%;max-width:200px;height:auto;margin:0 auto 20px;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.5))}
+.login p{color:#9aa7b4;margin:0 0 24px;font-size:12px;text-align:center;
+  letter-spacing:.2em;text-transform:uppercase}
+.login .fld{margin-bottom:14px}
+.login .fld label{color:#9aa7b4}
+.login .fld input{background:#1c2430;border-color:#2a3341;color:#e6edf3}
+.login .fld input::placeholder{color:#66727f}
+.login .fld input:focus{border-color:#db2229;box-shadow:0 0 0 3px rgba(219,34,41,.22)}
+.login .btn-primary{width:100%;justify-content:center;height:46px;margin-top:8px;
+  background:#db2229;font-size:15px}
+.login .btn-primary:hover{background:#e11d3c}
+.login .err{color:#ff7b72;font-size:13px;margin-top:12px;min-height:18px;text-align:center}
+.login .back{display:block;margin-top:20px;text-align:center;color:#66727f;
+  font-size:12.5px;text-decoration:none;transition:color .16s ease}
+.login .back:hover{color:#e6edf3}
 
 .hidden{display:none!important}
 @media(max-width:760px){
@@ -205,6 +220,7 @@ tr:hover td{background:#FAFBFC;cursor:pointer}
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="messaging.js"></script>
+<script src="email-editor.js"></script>
 <script src="messaging-ui.js"></script>
 <script>
 /* ============================================================
@@ -358,12 +374,14 @@ function render(){
   <div class="app">
     <aside class="side">
       <div class="brand">
-        <div class="mark">G</div>
-        <div class="bn">${esc(CFG.DEALER_NAME)}<small>Leads Manager</small></div>
+        <img class="mark" src="giantmotorcars-logo-for-dark-bg.svg"
+             alt="${esc(CFG.DEALER_NAME)}" width="486" height="231">
+        <div class="bn">Leads Manager</div>
       </div>
       <div class="appsw">
         <a class="on">Leads</a>
         <a href="${esc(CFG.SOLD_URL||'sold.html')}">Sold</a>
+        <a href="${esc(CFG.BLAST_URL||'blast.html')}">Blast</a>
       </div>
       <div class="nav">
         <button class="${state.view==='board'?'on':''}" onclick="setView('board')">▦ Pipeline</button>
@@ -594,13 +612,14 @@ function closeModal(){const s=document.getElementById('scrim');if(s)s.remove();}
 function renderLogin(){
   document.getElementById('root').innerHTML=`
   <div class="login"><div class="box">
-    <div class="mark">G</div>
-    <h1>${esc(CFG.DEALER_NAME)}</h1>
-    <p>Sign in to the leads board</p>
+    <img class="mark" src="giantmotorcars-logo-for-dark-bg.svg"
+         alt="${esc(CFG.DEALER_NAME)}" width="486" height="231">
+    <p>Leads Board</p>
     <div class="fld"><label>Email</label><input id="li_email" type="email" placeholder="you@dealer.com"></div>
     <div class="fld"><label>Password</label><input id="li_pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn-primary" onclick="doLogin()">Sign in</button>
     <div class="err" id="li_err"></div>
+    <a class="back" href="https://www.giantmotorcar.com/internal/index.html">&larr; Back to Internal Business Management</a>
   </div></div>`;
 }
 async function doLogin(){

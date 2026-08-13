@@ -113,9 +113,50 @@ DEALER_ADDRESS:    "1234 N Dale Mabry Hwy, Tampa, FL 33607",
 
 **Several at once** — tick the checkboxes in the list, then **✉ Email N customers** in the blue bar. Ticking the header checkbox selects everything currently filtered, so you can filter to "Tag pending" or a given lienholder and email exactly that group.
 
+**A real campaign** — use the **Blast** page (third tab in the sidebar). See below.
+
 The first send each session pops a Google window to connect. After that it's silent until you close the browser.
 
 Every email is sent **individually**. Recipients never see each other, and each message has that customer's own details merged in.
+
+---
+
+## The Blast page
+
+Built for sending one message to a segment of sold customers. Three columns: pick who, write it, see exactly what lands.
+
+**Audience** (left). Filter by sale date range, sale type, lienholder, service contract, tag status, and whether the customer has payment data. The count at the top updates as you go, and anyone who can't be emailed is pulled out automatically with the reason shown. Untick individuals in the list if you want to drop someone.
+
+*Leave alone if emailed recently* excludes anyone who already got an email from the CRM in the last 7/14/30/90 days — the single most useful guard against annoying your customer list. It reads the `messages` table, so it only works once you've sent at least one email through the app.
+
+**Message** (middle). Pick a template or start blank, then write. Covered in the next section.
+
+**Preview** (right). Steps through recipients one at a time showing the finished email as they'll receive it, merged with their own details. **Desktop / Mobile** changes the width; **Plain text** shows the text-only copy that goes out alongside the HTML. Warnings appear underneath: empty tokens, unknown fields, total image weight, and whether the batch would push you past the daily cap.
+
+**Send test to me** sends one copy to your own Gmail, merged with the first recipient's details, subject prefixed `[TEST]`. Do this before every blast.
+
+While sending you get a progress bar and a **Stop after this one** button. Afterwards, anyone who failed can be retried in one click, or you can download the whole result as CSV.
+
+---
+
+## Formatting and images
+
+The composer is a proper editor now — the same one on the Blast page, the single-customer compose screen, and the template editor.
+
+**Formatting:** bold, italic, underline, text colour, headings, alignment, bulleted and numbered lists, links, horizontal dividers, and a call-to-action **button** (asks for the text and where it points).
+
+**Images:** click 🖼 or paste or drag one straight in. Click a placed image to resize it (Small / Medium / Large / Full), align it, set its alt text, or remove it.
+
+Two things worth understanding, because they're what makes these arrive looking right:
+
+- **Images are attached to the email, not linked.** Nothing needs hosting anywhere. The trade-off is weight — every image is added to *every* copy, so a 2 MB photo sent to 300 people is 600 MB of upload from your browser. The preview pane tells you the per-email size; keep it under about 1 MB. Images are automatically shrunk to 1088px wide and re-compressed on the way in, so a photo straight off a phone is usually fine.
+- **Alt text matters.** Most mail clients block images until the reader clicks "show images". Whatever you put in alt text is what they see until then.
+
+**Merge tokens** are inserted from the **Insert field…** dropdown and appear as a coloured chip. Click a chip to set what it prints when that customer has nothing on file — that's the `{{first_name|there}}` fallback, just without typing the pipe. Because a chip is a single object, formatting can't accidentally split a token down the middle.
+
+`</>` switches to raw HTML if you'd rather paste in a design of your own. Anything you paste from Word or a web page is cleaned up automatically.
+
+Older plain-text templates still work — they're converted to formatted text the moment you open one, and saving stores the formatted version.
 
 ### Templates
 **✉ Templates** in the toolbar. Leads and Sold have separate template sets, since the useful fields differ.
@@ -174,7 +215,7 @@ You'll see the list of who was skipped and why before you send.
 
 **Daily limits.** A free Gmail account allows roughly **500 recipients per day**; Google Workspace allows 2,000. The app tracks how many you've sent today and warns before large batches. Exceeding it locks sending for about 24 hours, so split large campaigns across days.
 
-**Unsubscribes are manual right now.** The footer asks people to reply "unsubscribe". When someone does, set `email_opt_out = true` on their row in Supabase and they'll be excluded from every future send. Automating this needs inbox read access, which is a heavier Google review — worth doing only if the volume justifies it.
+**Unsubscribes are manual right now.** The footer asks people to reply "unsubscribe". When someone does, open their record on the Sold page → **✏ Edit all fields** → tick **Unsubscribed**. They're then excluded from every future send, on both the single-customer screen and the Blast page. (This used to require editing the row in Supabase by hand.) Automating it needs inbox read access, which is a heavier Google review — worth doing only if the volume justifies it.
 
 **Password changes revoke access.** Changing your Gmail password invalidates the connection. The app will show **Connect Gmail** again — click it and you're back.
 
@@ -195,3 +236,7 @@ You'll see the list of who was skipped and why before you send.
 | "Google hasn't verified this app" | Expected. **Advanced** → **Go to … (unsafe)** |
 | Sends fail after ~500 | Daily Gmail cap. Resume tomorrow |
 | Templates list is empty | The SQL script hasn't been run against this Supabase project |
+| "Email is 26.4 MB — over Gmail's 25 MB limit" | Too many or too large images. Remove one, or click it and pick a smaller size |
+| Images show as empty boxes for the recipient | Their mail client blocks images until they click "show images" — normal. Alt text is what they see until then |
+| A blast is crawling | Every image is uploaded again for each recipient. Shrink them; the preview pane shows the per-email size |
+| "Leave alone if emailed recently" finds nobody | It reads the `messages` table — nothing to find until you've sent at least one email through the app |

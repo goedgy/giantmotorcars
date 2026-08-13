@@ -26,6 +26,8 @@ const TOKEN_KEY        = 'gmc_gmail_token';
 const SENT_COUNT_KEY   = 'gmc_gmail_sent';
 const GAP_MS           = 350;    // pause between sends, keeps us well under Gmail's rate limit
 const BULK_WARN_AT     = 50;     // ask for confirmation above this many recipients
+const MAX_RAW_BYTES    = 25 * 1024 * 1024;   // Gmail's per-message ceiling
+const DAILY_CAP        = 500;    // free Gmail; Workspace is 2,000
 
 /* ---------- module state ---------- */
 const M = {
@@ -296,9 +298,17 @@ function b64url(str) {
   return btoa(toBinary(str)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-/* standard base64, wrapped at 76 chars as RFC 2045 requires for a body */
+/* RFC 2045 caps an encoded line at 76 chars. */
+function wrap76(b64) {
+  return (String(b64).match(/.{1,76}/g) || []).join('\r\n');
+}
+
 function b64body(str) {
-  return (btoa(toBinary(str)).match(/.{1,76}/g) || []).join('\r\n');
+  return wrap76(btoa(toBinary(str)));
+}
+
+function boundary(tag) {
+  return '--=_gmc_' + tag + '_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
 
 function encodeHeader(s) {
@@ -318,6 +328,80 @@ function textToHtml(text) {
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#1a1a1a">${paras}</div>`;
 }
 
+/* Does this template body carry markup, or is it one of the older plain-text ones? */
+function looksLikeHtml(s) {
+  return /<(p|div|br|span|table|h[1-6]|ul|ol|li|img|a|strong|em|b|i|hr|blockquote)\b[^>]*>/i.test(String(s || ''));
+}
+
+const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", apos: "'", nbsp: ' ', mdash: '—', ndash: '–', hellip: '…', rsquo: '’', lsquo: '‘', ldquo: '“', rdquo: '”' };
+
+function decodeEntities(s) {
+  const str = String(s);
+  if (str.indexOf('&') < 0) return str;
+  // The browser knows every named entity by heart. A textarea's content is
+  // parsed as raw text, so nothing in here can execute.
+  try {
+    const el = document.createElement('textarea');
+    el.innerHTML = str;
+    return el.value;
+  } catch (e) {}
+  return str.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (m, e) => {
+    if (e[0] === '#') {
+      const n = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+      return isNaN(n) ? m : String.fromCodePoint(n);
+    }
+    const v = ENT[e.toLowerCase()];
+    return v == null ? m : v;
+  });
+}
+
+/* Every HTML email needs a text/plain twin. Spam filters weigh its absence,
+   and some clients (and watches) show nothing else. */
+function htmlToText(html) {
+  let s = String(html || '');
+  s = s.replace(/<(style|script|head|title)[\s\S]*?<\/\1>/gi, '');
+  s = s.replace(/<!--[\s\S]*?-->/g, '');
+  s = s.replace(/<a\b[^>]*href\s*=\s*"([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (m, href, inner) => {
+    const t = decodeEntities(inner.replace(/<[^>]+>/g, '')).trim();
+    if (!href || /^(mailto:|tel:|#)/i.test(href)) return t || href;
+    return t && t.replace(/\/$/, '') !== href.replace(/\/$/, '') ? `${t} (${href})` : (t || href);
+  });
+  s = s.replace(/<img\b[^>]*\balt\s*=\s*"([^"]+)"[^>]*>/gi, '[$1]');
+  s = s.replace(/<img\b[^>]*>/gi, '');
+  s = s.replace(/<li\b[^>]*>/gi, '\n• ');
+  s = s.replace(/<br\s*\/?>/gi, '\n');
+  s = s.replace(/<\/(p|div|h[1-6]|li|tr|blockquote)>/gi, '\n\n');
+  s = s.replace(/<hr\b[^>]*>/gi, '\n————————\n\n');
+  s = s.replace(/<[^>]+>/g, '');
+  s = decodeEntities(s).replace(/\u00a0/g, ' ');
+  // Source indentation is meaningless once the tags are gone.
+  s = s.split('\n').map(l => l.trim()).join('\n');
+  return s.replace(/\n{3,}/g, '\n\n').trim();
+}
+
+/* Wraps composed content in a centred 600px card. Table-based on purpose —
+   Outlook still ignores most modern layout CSS, and every style is inline
+   because Gmail strips <style> blocks. */
+function wrapEmail(inner, opts) {
+  opts = opts || {};
+  const brand  = clean(M.cfg.DEALER_NAME);
+  const accent = clean(M.cfg.EMAIL_ACCENT) || '#047857';
+  const header = opts.header !== false && !!brand;
+  const foot   = opts.footer === false ? '' : footerFor();
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escHtml(opts.subject || brand)}</title></head>
+<body style="margin:0;padding:0;background:#f2f4f7;-webkit-text-size-adjust:100%">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f2f4f7">
+<tr><td align="center" style="padding:24px 12px">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;max-width:600px;background:#ffffff;border:1px solid #e4e7ec;border-radius:12px">
+${header ? `<tr><td style="background:${accent};padding:17px 28px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:bold;color:#ffffff;border-radius:11px 11px 0 0">${escHtml(brand)}</td></tr>` : ''}
+<tr><td style="padding:28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1a1a1a">${inner}</td></tr>
+${foot ? `<tr><td style="padding:0 28px 22px">${foot}</td></tr>` : ''}
+</table>
+</td></tr></table></body></html>`;
+}
+
 function footerFor() {
   const bits = [];
   if (clean(M.cfg.DEALER_NAME))    bits.push(escHtml(M.cfg.DEALER_NAME));
@@ -331,23 +415,69 @@ function footerFor() {
   </div>`;
 }
 
-function buildMime({ to, toName, subject, html, fromName }) {
+/* text/plain + text/html side by side; the client picks. */
+function partAlternative(text, html) {
+  const b = boundary('alt');
+  return {
+    headers: [`Content-Type: multipart/alternative; boundary="${b}"`],
+    body: [
+      `--${b}`,
+      'Content-Type: text/plain; charset=UTF-8',
+      'Content-Transfer-Encoding: base64', '',
+      b64body(text), '',
+      `--${b}`,
+      'Content-Type: text/html; charset=UTF-8',
+      'Content-Transfer-Encoding: base64', '',
+      b64body(html), '',
+      `--${b}--`
+    ].join('\r\n')
+  };
+}
+
+/* Inline images ride along as related parts the HTML references by cid:.
+   Embedding them as data: URIs instead would be simpler and would not work —
+   Gmail, Outlook and Apple Mail all refuse to render data: image sources. */
+function partRelated(alt, images) {
+  const b = boundary('rel');
+  const out = [`--${b}`, ...alt.headers, '', alt.body, ''];
+  images.forEach(im => {
+    out.push(
+      `--${b}`,
+      `Content-Type: ${im.mime}; name="${im.name}"`,
+      'Content-Transfer-Encoding: base64',
+      `Content-ID: <${im.cid}>`,
+      `Content-Disposition: inline; filename="${im.name}"`, '',
+      wrap76(im.b64), ''
+    );
+  });
+  out.push(`--${b}--`);
+  return {
+    headers: [`Content-Type: multipart/related; type="multipart/alternative"; boundary="${b}"`],
+    body: out.join('\r\n')
+  };
+}
+
+function buildMime({ to, toName, subject, html, text, images, fromName, replyTo }) {
   const headers = [`To: ${toName ? `${encodeHeader(toName)} <${to}>` : to}`];
   if (fromName && M.token && M.token.email) {
     headers.push(`From: ${encodeHeader(fromName)} <${M.token.email}>`);
   }
-  headers.push(
-    `Subject: ${encodeHeader(subject || '')}`,
-    'MIME-Version: 1.0',
-    'Content-Type: text/html; charset=UTF-8',
-    'Content-Transfer-Encoding: base64'
-  );
+  if (replyTo) headers.push(`Reply-To: ${replyTo}`);
+  headers.push(`Subject: ${encodeHeader(subject || '')}`, 'MIME-Version: 1.0');
+
+  const body = text != null && text !== '' ? text : htmlToText(html);
+  let part = partAlternative(body, html);
+  if (images && images.length) part = partRelated(part, images);
+
   // The blank line between headers and body is required — do not filter it out.
-  return headers.join('\r\n') + '\r\n\r\n' + b64body(html);
+  return headers.concat(part.headers).join('\r\n') + '\r\n\r\n' + part.body;
 }
 
-async function sendOne({ to, toName, subject, html, fromName }) {
-  const raw = b64url(buildMime({ to, toName, subject, html, fromName }));
+async function sendOne({ to, toName, subject, html, text, images, fromName, replyTo }) {
+  const raw = b64url(buildMime({ to, toName, subject, html, text, images, fromName, replyTo }));
+  if (raw.length > MAX_RAW_BYTES) {
+    throw new Error(`Email is ${(raw.length / 1048576).toFixed(1)} MB — over Gmail's 25 MB limit. Remove or shrink an image.`);
+  }
   const res = await fetch(SEND_ENDPOINT, {
     method: 'POST',
     headers: {
@@ -515,12 +645,13 @@ global.GMC = {
   loadTemplates, saveTemplate, deleteTemplate,
   get templates() { return M.templates; },
   connectGmail, disconnectGmail, gmailConnected, gmailConfigured, gmailAddress,
-  ensureToken, sendOne, textToHtml, footerFor, escHtml,
+  ensureToken, sendOne, buildMime, textToHtml, htmlToText, looksLikeHtml,
+  wrapEmail, footerFor, escHtml,
   logMessage, logLeadActivity, historyFor,
   bumpSentCount, sentToday,
-  prettyDate, prettyPhone,
+  prettyDate, prettyPhone, prettyMoney,
   _state: M,
-  GAP_MS, BULK_WARN_AT
+  GAP_MS, BULK_WARN_AT, MAX_RAW_BYTES, DAILY_CAP
 };
 
 })(window);
