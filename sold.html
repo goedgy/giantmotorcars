@@ -32,7 +32,8 @@
 
 <style>
 :root{
-  --asphalt:#14171C; --asphalt-2:#1B1F27; --asphalt-3:#242A34;
+  --asphalt:#161b22; --asphalt-2:#1c2430; --asphalt-3:#2a3341;
+  --gmc-red:#db2229; --gmc-red-hi:#e11d3c;
   --ink:#0F1115; --muted:#6B7280; --muted-2:#9AA3AF;
   --paper:#F4F5F7; --card:#FFFFFF; --line:#E4E7EC; --line-2:#EDEFF3;
   --primary:#047857; --primary-ink:#065F46; --primary-soft:#E7F6F0;
@@ -47,21 +48,23 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
 
 .app{display:grid;grid-template-columns:230px 1fr;height:100vh;overflow:hidden}
-.side{background:var(--asphalt);color:#fff;display:flex;flex-direction:column;padding:20px 14px}
-.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px}
-.brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#10B981);display:grid;place-items:center;font-family:'Space Grotesk';font-weight:700;font-size:17px;color:#fff;flex:none}
-.brand .bn{font-family:'Space Grotesk';font-weight:600;font-size:15px;line-height:1.15}
-.brand .bn small{display:block;font-family:'Inter';font-weight:400;font-size:11px;color:var(--muted-2)}
+.side{background:var(--asphalt);color:#fff;display:flex;flex-direction:column;padding:20px 14px;
+  border-right:1px solid var(--asphalt-3)}
+.brand{display:block;padding:2px 8px 18px;text-align:center}
+.brand .mark{display:block;width:100%;max-width:150px;height:auto;margin:0 auto 10px;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
+.brand .bn{font-family:'Inter';font-weight:600;font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted-2)}
 .appsw{display:flex;gap:4px;background:var(--asphalt-2);border-radius:10px;padding:4px;margin:0 8px 14px}
 .appsw a{flex:1;text-align:center;padding:7px 8px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--muted-2);text-decoration:none;transition:.12s;cursor:pointer}
 .appsw a:hover{color:#fff}
-.appsw a.on{background:var(--asphalt-3);color:#fff}
+.appsw a.on{background:var(--gmc-red);color:#fff}
 .side .stat{background:var(--asphalt-2);border-radius:11px;padding:12px 13px;margin-bottom:9px}
 .side .stat .n{font-family:'Space Grotesk';font-weight:700;font-size:22px}
 .side .stat .l{font-size:11.5px;color:var(--muted-2);font-weight:500}
 .side-foot{margin-top:auto;padding:12px 8px 2px;border-top:1px solid var(--asphalt-3)}
 .side-foot .u{display:flex;align-items:center;gap:9px;font-size:13px}
-.side-foot .av{width:28px;height:28px;border-radius:50%;background:var(--primary);display:grid;place-items:center;font-weight:600;font-size:12px;color:#fff;flex:none}
+.side-foot .av{width:28px;height:28px;border-radius:50%;background:var(--gmc-red);display:grid;place-items:center;font-weight:600;font-size:12px;color:#fff;flex:none}
 .side-foot .lo{color:var(--muted-2);font-size:12px;margin-top:8px}
 .side-foot .lo:hover{color:#fff}
 
@@ -294,8 +297,10 @@ function render(){
   document.getElementById('root').innerHTML=`
   <div class="app">
     <aside class="side">
-      <div class="brand"><div class="mark">G</div>
-        <div class="bn">${esc(CFG.DEALER_NAME)}<small>Sold Customers</small></div></div>
+      <div class="brand">
+        <img class="mark" src="giantmotorcars-logo-for-dark-bg.svg"
+             alt="${esc(CFG.DEALER_NAME)}" width="486" height="231">
+        <div class="bn">Sold Customers</div></div>
       <div class="appsw">
         <a href="${esc(CFG.LEADS_URL||'index.html')}">Leads</a>
         <a class="on">Sold</a>
