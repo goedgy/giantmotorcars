@@ -1,0 +1,24 @@
+# The database password lives here. Deny it to the web outright, in
+# case PHP is ever mis-served as plain text.
+<Files "config.php">
+  Require all denied
+</Files>
+<Files "config.example.php">
+  Require all denied
+</Files>
+<Files "bootstrap.php">
+  Require all denied
+</Files>
+<Files "schema.php">
+  Require all denied
+</Files>
+
+# Apache 2.2 fallback for the same rules.
+<IfModule !mod_authz_core.c>
+  <Files "config.php">
+    Order allow,deny
+    Deny from all
+  </Files>
+</IfModule>
+
+Options -Indexes

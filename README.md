@@ -1,5 +1,11 @@
 # Giant Motor Cars CRM
 
+> **Two versions live here.** This page describes **V1**, which runs on
+> Supabase and deploys to GitHub Pages. **[`v2/`](v2/) is the same CRM with
+> Supabase replaced by PHP + MySQL**, to run on Namecheap shared hosting —
+> see [v2/README.md](v2/README.md). V1 is unchanged and still works; nothing
+> here has to be switched off to try V2.
+
 Two static pages backed by Supabase, with Gmail sending built in. No build step, no server — the browser talks to Supabase and to the Gmail API directly.
 
 | Page | Live address |

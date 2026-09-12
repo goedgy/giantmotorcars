@@ -1,0 +1,32 @@
+# ---- HTTPS only ----------------------------------------------------
+# The session cookie is issued with the Secure flag over TLS, and Google
+# sign-in for Gmail refuses a plain-http origin. Send everyone to https.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# ---- default document ----------------------------------------------
+DirectoryIndex index.html index.php
+
+# ---- don't advertise what's in the folder ---------------------------
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "same-origin"
+</IfModule>
+
+# ---- never serve the raw config or schema ---------------------------
+<FilesMatch "^(config\.php|config\.example\.php|schema\.sql)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
