@@ -7,4 +7,11 @@ return [
     'db_name' => '',
     'db_user' => '',
     'db_pass' => '',
+
+    // Sign in with Google. Same OAuth client id the pages use for Gmail.
+    'google_client_id' => '',
+
+    // Turn this off once Google sign-in works for everyone: with no password
+    // accepted anywhere, there is nothing left to brute force.
+    'allow_password_login' => true,
 ];

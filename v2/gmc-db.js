@@ -124,6 +124,14 @@ Auth.prototype = {
     const user = r.data && r.data.user;
     return { data: { user, session: user ? { user } : null }, error: null };
   },
+  /* The browser has already been handed a signed token by Google; the
+     server verifies it and decides whether that address is allowed in. */
+  async signInWithGoogle(credential) {
+    const r = await apiCall(this._base, 'google_login', { credential });
+    if (r.error) return { data: { user: null, session: null }, error: r.error };
+    const user = r.data && r.data.user;
+    return { data: { user, session: user ? { user } : null }, error: null };
+  },
   async signOut() {
     const r = await apiCall(this._base, 'logout', {});
     return { error: r.error };

@@ -10,11 +10,15 @@
 -- to fail on a constraint mid-batch.
 -- ============================================================
 
+-- password_hash is nullable on purpose: a Google-only user has no password
+-- at all, which is the point — there is nothing left to guess.
 CREATE TABLE IF NOT EXISTS `users` (
   `id`            CHAR(36)     NOT NULL,
   `email`         VARCHAR(190) NOT NULL,
   `name`          VARCHAR(120) NOT NULL DEFAULT '',
-  `password_hash` VARCHAR(255) NOT NULL,
+  `password_hash` VARCHAR(255) NULL DEFAULT NULL,
+  `google_sub`    VARCHAR(64)  NULL DEFAULT NULL,
+  `is_admin`      TINYINT(1)   NOT NULL DEFAULT 0,
   `is_active`     TINYINT(1)   NOT NULL DEFAULT 1,
   `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `last_login_at` DATETIME     NULL DEFAULT NULL,

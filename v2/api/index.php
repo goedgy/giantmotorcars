@@ -27,10 +27,17 @@
 
 declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/google_auth.php';
 
 const MAX_ROWS          = 5000;   // ceiling on one select
 const LOGIN_WINDOW_MIN  = 15;
-const LOGIN_MAX_TRIES   = 10;
+const LOGIN_MAX_TRIES   = 10;    // per IP
+const LOGIN_MAX_ACCOUNT = 5;     // per email address, across every IP
+
+/* Compared against when the address is unknown, so a miss costs the same
+   bcrypt work as a hit. Without it the two answers differ by ~100x and the
+   form becomes a way to discover which addresses have accounts. */
+const DUMMY_HASH = '$2y$12$Ytgejh0aROKW302Z6ypNDO.FGNElSU4UUbnT5XUZcKqWWdMekbkfm';
 
 /* Filters arrive as [[column, op, value], …]. Declared up here, not beside
    build_where(): a top-level `const` runs when execution reaches it, and
@@ -56,7 +63,8 @@ if (!is_array($body)) $body = [];
 
 try {
     switch ($action) {
-        case 'login':   do_login($body);   break;
+        case 'login':        do_login($body);        break;
+        case 'google_login': do_google_login($body); break;
         case 'logout':  do_logout();       break;
         case 'session': do_session();      break;
         case 'select':  do_select($body);  break;
@@ -82,6 +90,7 @@ function current_user(): ?array {
         'id'    => $_SESSION['uid'],
         'email' => $_SESSION['uemail'] ?? '',
         'name'  => $_SESSION['uname'] ?? '',
+        'is_admin' => !empty($_SESSION['uadmin']),
     ] : null;
 }
 
@@ -92,18 +101,34 @@ function require_user(): array {
 }
 
 function do_login(array $b): void {
+    $cfg = config() ?? [];
+    if (isset($cfg['allow_password_login']) && !$cfg['allow_password_login']) {
+        fail(403, 'Password sign-in is turned off here. Use Sign in with Google.');
+    }
+
     $email = strtolower(trim((string)($b['email'] ?? '')));
     $pass  = (string)($b['password'] ?? '');
     if ($email === '' || $pass === '') fail(400, 'Enter your email and password.');
 
     $pdo = db();
     $ip  = client_ip();
+    prune_attempts($pdo);
 
-    // Throttle by IP. Cheap, and enough to make guessing impractical.
     $since = gmdate('Y-m-d H:i:s', time() - LOGIN_WINDOW_MIN * 60);
+
+    // Per IP, and — the part that matters — per account. Throttling by IP
+    // alone leaves one address open to unlimited guessing from a rotating
+    // set of addresses, which is how this would actually be attacked.
     $st = $pdo->prepare('SELECT COUNT(*) FROM `login_attempts` WHERE `ip` = ? AND `at` > ?');
     $st->execute([$ip, $since]);
-    if ((int)$st->fetchColumn() >= LOGIN_MAX_TRIES) {
+    $byIp = (int)$st->fetchColumn();
+
+    $st = $pdo->prepare('SELECT COUNT(*) FROM `login_attempts` WHERE `email` = ? AND `at` > ?');
+    $st->execute([$email, $since]);
+    $byAccount = (int)$st->fetchColumn();
+
+    if ($byIp >= LOGIN_MAX_TRIES || $byAccount >= LOGIN_MAX_ACCOUNT) {
+        note_attempt($pdo, $ip, $email);     // keep the window sliding while they hammer
         fail(429, 'Too many sign-in attempts. Wait ' . LOGIN_WINDOW_MIN . ' minutes and try again.');
     }
 
@@ -111,12 +136,22 @@ function do_login(array $b): void {
     $st->execute([$email]);
     $user = $st->fetch();
 
-    $ok = $user && (int)$user['is_active'] === 1 && password_verify($pass, (string)$user['password_hash']);
+    // Always do the bcrypt work, even with no such user and even for a
+    // Google-only account, so every failure takes the same time.
+    $hash = ($user && $user['password_hash'] !== null && $user['password_hash'] !== '')
+        ? (string)$user['password_hash']
+        : DUMMY_HASH;
+    $passwordOk = password_verify($pass, $hash);
+
+    $ok = $user
+        && (int)$user['is_active'] === 1
+        && $user['password_hash'] !== null && $user['password_hash'] !== ''
+        && $passwordOk;
 
     if (!$ok) {
-        $pdo->prepare('INSERT INTO `login_attempts` (`ip`, `email`) VALUES (?, ?)')->execute([$ip, $email]);
-        // Same message whether the address is unknown or the password is wrong,
-        // so this can't be used to enumerate who has an account.
+        note_attempt($pdo, $ip, $email);
+        // Each successive failure costs a little more wall-clock time.
+        usleep(min(1500000, 150000 * (1 + max($byIp, $byAccount))));
         fail(401, 'Email or password is incorrect.');
     }
 
@@ -125,16 +160,74 @@ function do_login(array $b): void {
             ->execute([password_hash($pass, PASSWORD_DEFAULT), $user['id']]);
     }
 
-    $pdo->prepare('DELETE FROM `login_attempts` WHERE `ip` = ?')->execute([$ip]);
-    $pdo->prepare('UPDATE `users` SET `last_login_at` = UTC_TIMESTAMP() WHERE `id` = ?')->execute([$user['id']]);
+    $pdo->prepare('DELETE FROM `login_attempts` WHERE `ip` = ? OR `email` = ?')->execute([$ip, $email]);
+    establish_session($user);
+}
+
+function note_attempt(PDO $pdo, string $ip, string $email): void {
+    $pdo->prepare('INSERT INTO `login_attempts` (`ip`, `email`) VALUES (?, ?)')->execute([$ip, $email]);
+}
+
+/* The table only needs the current window; without this it grows forever. */
+function prune_attempts(PDO $pdo): void {
+    if (random_int(1, 20) !== 1) return;
+    $pdo->prepare('DELETE FROM `login_attempts` WHERE `at` < ?')
+        ->execute([gmdate('Y-m-d H:i:s', time() - 86400)]);
+}
+
+function establish_session(array $user): void {
+    db()->prepare('UPDATE `users` SET `last_login_at` = UTC_TIMESTAMP() WHERE `id` = ?')->execute([$user['id']]);
 
     // New session id on privilege change, so a fixated one is worthless.
     session_regenerate_id(true);
-    $_SESSION['uid']    = $user['id'];
-    $_SESSION['uemail'] = $user['email'];
-    $_SESSION['uname']  = $user['name'] !== '' ? $user['name'] : explode('@', (string)$user['email'])[0];
+    $_SESSION['uid']     = $user['id'];
+    $_SESSION['uemail']  = $user['email'];
+    $_SESSION['uname']   = ($user['name'] ?? '') !== '' ? $user['name'] : explode('@', (string)$user['email'])[0];
+    $_SESSION['uadmin']  = (int)($user['is_admin'] ?? 0) === 1;
 
     json_out(['data' => ['user' => current_user()]]);
+}
+
+/* Sign in with Google. Google has already proved who this is; all that is
+   left is to check the address is one we allow in. */
+function do_google_login(array $b): void {
+    $cfg      = config() ?? [];
+    $clientId = trim((string)($cfg['google_client_id'] ?? ''));
+    if ($clientId === '') fail(400, 'Google sign-in is not configured. Add google_client_id to api/config.php.');
+
+    $credential = (string)($b['credential'] ?? '');
+    if ($credential === '') fail(400, 'No Google credential supplied.');
+
+    try {
+        $claims = google_verify_id_token($credential, $clientId);
+    } catch (Throwable $e) {
+        error_log('[gmc-api] google token rejected: ' . $e->getMessage());
+        fail(401, 'Google sign-in could not be verified. Try again.');
+    }
+
+    $email = strtolower(trim((string)$claims['email']));
+
+    $st = db()->prepare('SELECT * FROM `users` WHERE `email` = ? LIMIT 1');
+    $st->execute([$email]);
+    $user = $st->fetch();
+
+    // A valid Google account is not a free pass — the address has to be listed.
+    if (!$user) {
+        fail(403, 'There is no account here for ' . $email . '. An admin can add it on the Users page.');
+    }
+    if ((int)$user['is_active'] !== 1) {
+        fail(403, 'That account has been deactivated.');
+    }
+
+    // Remember the Google subject id the first time; it survives an email change.
+    if (array_key_exists('google_sub', $user) && empty($user['google_sub']) && !empty($claims['sub'])) {
+        try {
+            db()->prepare('UPDATE `users` SET `google_sub` = ? WHERE `id` = ?')
+                ->execute([(string)$claims['sub'], $user['id']]);
+        } catch (Throwable $e) { /* column may predate the upgrade; not worth failing a login over */ }
+    }
+
+    establish_session($user);
 }
 
 function do_logout(): void {

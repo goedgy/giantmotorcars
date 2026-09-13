@@ -14,7 +14,7 @@ both side by side until you're happy with this one.
 |---|---|---|
 | Database | Supabase (hosted Postgres) | MySQL on your host |
 | Data API | supabase-js → PostgREST | `gmc-db.js` → `api/index.php` |
-| Login | Supabase Auth | PHP sessions, bcrypt passwords |
+| Login | Supabase Auth | Sign in with Google (passwords optional, and best turned off) |
 | Security boundary | Row Level Security, public key in the page | Server-side session check; **no credential in the browser at all** |
 | Monthly cost | Supabase plan | included in hosting you already pay for |
 
@@ -114,10 +114,56 @@ Delete `import-supabase.php` when you're done.
 | `api/bootstrap.php` | config, PDO, session, type coercion |
 | `api/config.php` | **your database password.** Written by setup.php, git-ignored |
 | `schema.sql` | the seven tables |
+| `users.php` | who can sign in — add, deactivate, promote |
+| `google-signin.js`, `api/google_auth.php` | Sign in with Google, and the ID token verification behind it |
+| `upgrade.php` | applies schema changes and the Google client id to an existing install — delete after use |
 | `setup.php` | install wizard — delete after use |
 | `import-supabase.php` | CSV migration — delete after use |
 | `fix-duplicates.php` | merges rows that are the same record under different ids — delete after use |
 | `api/dupkeys.php` | what counts as "the same record" — shared by the importer and the cleanup |
+
+---
+
+## Signing in
+
+**Sign in with Google is the way in.** There is no password to guess, and
+Google does the hard parts — unfamiliar-device checks, 2FA, account recovery.
+
+Being a valid Google account is not enough. The address must also be listed
+on the **Users** page; anyone else is refused by name:
+
+> There is no account here for someone@example.com.
+
+### Adding someone
+
+Open `users.php` (signed in as an admin) → **Add someone** → their name and
+the Google address they actually sign in with. Leave the password blank.
+Nothing is emailed to them; tell them to open the CRM and press **Sign in
+with Google**.
+
+The same page deactivates, reactivates, promotes to admin, removes a
+password, or removes a person entirely. It won't let you deactivate or
+delete your own account, or remove the last admin — the two ways a small
+team locks itself out.
+
+### Turning passwords off
+
+Once everyone has signed in with Google at least once, open `upgrade.php`
+and untick **Keep accepting email + password sign-in**. From then on the
+API refuses password sign-in outright and there is nothing left to brute
+force. Test the Google button in a private window *before* you do this.
+
+### While passwords are still on
+
+They're throttled two ways: 10 failures per IP and **5 per account** in 15
+minutes. The per-account cap is the one that matters — throttling by IP
+alone leaves a single address open to unlimited guessing from a rotating
+set of addresses, which is how this would really be attacked.
+
+A wrong address and a wrong password take the same time to answer and give
+the same message, so the form can't be used to discover who has an account.
+A locked-out account can still get in with Google, so a lockout can never
+shut you out completely.
 
 ---
 
@@ -131,10 +177,13 @@ customer list. In V2 the browser holds nothing. Every request carries a
 session cookie, `api/index.php` rejects anything without a signed-in session,
 and the database credential never leaves the server.
 
-- **Passwords** are bcrypt via `password_hash()`, re-hashed automatically if
-  PHP's default cost changes. Login failures are throttled to 10 per IP per
-  15 minutes, and a wrong address and a wrong password give the same message
-  so the form can't be used to discover who has an account.
+- **Google ID tokens** are verified here, not taken on trust: RS256 signature
+  against Google's published keys, issuer, expiry, and — easy to forget and
+  fatal to skip — that the `aud` claim is *our* client id, so a token minted
+  for some other site can't be replayed. `alg:none` and HS256 key-confusion
+  forgeries are both rejected.
+- **Passwords**, while enabled, are bcrypt via `password_hash()` and throttled
+  per IP *and* per account. See "Signing in" above.
 - **SQL injection** — values are always bound parameters. Table and column
   names can't be bound, so they're checked against the whitelist in
   `api/schema.php` and rejected if unknown; that covers `ORDER BY` and the
@@ -146,8 +195,8 @@ and the database credential never leaves the server.
   than rewriting the whole table.
 - `.htaccess` denies web access to `config.php`, and forces HTTPS.
 
-Adding more people: insert into the `users` table with a hash from
-`php -r 'echo password_hash("their-password", PASSWORD_DEFAULT);'`.
+Adding more people: the **Users** page. No database editing, and with Google
+sign-in no password to invent or transmit.
 
 ---
 
@@ -185,3 +234,7 @@ send on a schedule. Not built yet, but the database is already shaped for it.
 | Template with an image won't save | `post_max_size` too small — see above |
 | Import looks frozen | A few thousand rows takes a minute. Wait it out; don't submit twice |
 | Records appear twice | Run `fix-duplicates.php` |
+| "There is no account here for…" | That Google address isn't on the Users page yet |
+| The Google button doesn't appear | `GOOGLE_CLIENT_ID` is empty in the page's config block, or the page isn't on https |
+| Google button appears but sign-in fails | Your domain isn't in **Authorized JavaScript origins** in Google Cloud — bare host, no path |
+| "Google sign-in is not configured" | `google_client_id` missing from `api/config.php` — run `upgrade.php` |

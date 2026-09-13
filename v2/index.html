@@ -217,6 +217,7 @@ tr:hover td{background:#FAFBFC;cursor:pointer}
 <div id="root"></div>
 
 <script src="gmc-db.js"></script>
+<script src="google-signin.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="messaging.js"></script>
@@ -615,12 +616,32 @@ function renderLogin(){
     <img class="mark" src="giantmotorcars-logo-for-dark-bg.svg"
          alt="${esc(CFG.DEALER_NAME)}" width="486" height="231">
     <p>Leads Board</p>
+    <div id="gbtn" style="margin:4px 0 14px;display:flex;justify-content:center"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px;color:#9AA3AF;font-size:12px">
+      <span style="flex:1;height:1px;background:#E4E7EC"></span>or<span style="flex:1;height:1px;background:#E4E7EC"></span>
+    </div>
     <div class="fld"><label>Email</label><input id="li_email" type="email" placeholder="you@dealer.com"></div>
     <div class="fld"><label>Password</label><input id="li_pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn-primary" onclick="doLogin()">Sign in</button>
     <div class="err" id="li_err"></div>
     <a class="back" href="https://www.giantmotorcar.com/internal/index.html">&larr; Back to Internal Business Management</a>
   </div></div>`;
+  mountGoogleButton();
+}
+
+/* Shared by all three pages: hand Google's token to the API, and on
+   success carry on exactly as a password sign-in would. */
+function mountGoogleButton(){
+  GMCGoogle.mount(document.getElementById('gbtn'), CFG.GOOGLE_CLIENT_ID,
+    async credential=>{
+      const {data,error}=await sb.auth.signInWithGoogle(credential);
+      if(error) return error.message;
+      const e=data.user.email;
+      state.user={name:data.user.name||e.split('@')[0],email:e};
+      loadLeads();
+      return null;
+    },
+    (msg,isErr)=>{const el=document.getElementById('li_err');if(el){el.textContent=msg;el.style.color=isErr?'':'#6B7280';}});
 }
 async function doLogin(){
   const email=document.getElementById('li_email').value.trim();

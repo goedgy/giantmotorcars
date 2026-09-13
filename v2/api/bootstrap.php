@@ -29,10 +29,30 @@ function config(): ?array {
     static $cfg = null;
     if ($cfg === null) {
         if (!is_file(CONFIG_PATH)) return null;
-        $cfg = require CONFIG_PATH;
-        if (!is_array($cfg)) $cfg = null;
+        $loaded = @require CONFIG_PATH;
+        // A partially written file can parse to something that isn't our
+        // config at all; treat anything unrecognisable as absent.
+        $cfg = (is_array($loaded) && array_key_exists('db_name', $loaded)) ? $loaded : null;
     }
     return $cfg;
+}
+
+/* Writing config.php in place leaves a window where a concurrent request
+   reads a half-written file — and on a host with opcache the old version
+   keeps being served afterwards. Write to a temp file and rename (atomic on
+   POSIX), then drop the cached copies. */
+function write_config(array $cfg): bool {
+    $php = "<?php\n/* Written by setup.php / upgrade.php. Keep this file out of version control. */\nreturn "
+         . var_export($cfg, true) . ";\n";
+
+    $tmp = CONFIG_PATH . '.' . bin2hex(random_bytes(4)) . '.tmp';
+    if (@file_put_contents($tmp, $php, LOCK_EX) === false) return false;
+    @chmod($tmp, 0600);
+    if (!@rename($tmp, CONFIG_PATH)) { @unlink($tmp); return false; }
+
+    clearstatcache(true, CONFIG_PATH);
+    if (function_exists('opcache_invalidate')) @opcache_invalidate(CONFIG_PATH, true);
+    return true;
 }
 
 function db(): PDO {

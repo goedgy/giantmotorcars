@@ -48,17 +48,15 @@ if ($step === 'db' && $_SERVER['REQUEST_METHOD'] === 'POST' && !$locked) {
 
     try {
         db_connect($host, $name, $user, $pass, $port);   // prove it works before saving
-        $php = "<?php\n/* Written by setup.php. Keep this file out of version control. */\nreturn "
-             . var_export([
+        if (!write_config([
                  'db_host' => $host, 'db_port' => $port, 'db_name' => $name,
                  'db_user' => $user, 'db_pass' => $pass,
-               ], true) . ";\n";
-
-        if (@file_put_contents(CONFIG_PATH, $php) === false) {
+                 'google_client_id'     => trim((string)($_POST['google_client_id'] ?? '')),
+                 'allow_password_login' => true,
+               ])) {
             $problem = 'Could not write api/config.php. Create it by hand from api/config.example.php, '
                      . 'or make the api/ folder writable (chmod 755) and try again.';
         } else {
-            @chmod(CONFIG_PATH, 0600);
             header('Location: setup.php?step=tables'); exit;
         }
     } catch (PDOException $e) {
@@ -104,7 +102,9 @@ if ($step === 'user' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         elseif ($pw !== $pw2)                           $problem = 'The two passwords do not match.';
         else {
             try {
-                db()->prepare('INSERT INTO `users` (`id`,`email`,`name`,`password_hash`) VALUES (?,?,?,?)')
+                // The first account is always an admin — otherwise nobody could
+                // ever open the Users page to promote anyone.
+                db()->prepare('INSERT INTO `users` (`id`,`email`,`name`,`password_hash`,`is_admin`) VALUES (?,?,?,?,1)')
                     ->execute([uuid4(), $email, $name, password_hash($pw, PASSWORD_DEFAULT)]);
                 header('Location: setup.php?step=done'); exit;
             } catch (Throwable $e) {
@@ -190,6 +190,10 @@ a.btn{display:block;text-align:center;margin-top:18px;color:var(--primary);font-
       <input name="db_user" placeholder="cpaneluser_gmc" required>
       <label>Database password</label>
       <input name="db_pass" type="password" required>
+      <label>Google OAuth client ID <span style="text-transform:none;font-weight:400">(optional, for Sign in with Google)</span></label>
+      <input name="google_client_id" placeholder="1234567890-abc123.apps.googleusercontent.com">
+      <div class="hint">The same one in the config block of <code>index.html</code>. You can add it later
+        in <code>upgrade.php</code>.</div>
       <button type="submit">Test and continue</button>
     </form>
 
