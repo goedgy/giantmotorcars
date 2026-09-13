@@ -8,14 +8,18 @@
    Postgres booleans, ISO timestamps and empty strings land as
    MySQL TINYINT, DATETIME and NULL rather than errors.
 
-   Rows whose id already exists are skipped, so a half-finished
-   import can be re-run against the same file safely.
+   Re-running the same file is safe. A row is skipped when its id is
+   already present OR when its natural key is (VIN + last name for a
+   sold customer, and so on) — which is what catches a CSV that has
+   no id column at all, where every row would otherwise arrive as a
+   brand new UUID.
 
    Requires a signed-in session. Delete this file once migrated.
    ============================================================ */
 
 declare(strict_types=1);
 require_once __DIR__ . '/api/bootstrap.php';
+require_once __DIR__ . '/api/dupkeys.php';
 
 start_session();
 $signedIn = isset($_SESSION['uid']);
@@ -58,8 +62,17 @@ function import_csv(string $table, string $path): array {
     if (!$known) return ['error' => 'None of those column headers match the ' . $table . ' table.'];
 
     $pdo = db();
-    $have = [];
-    foreach ($pdo->query("SELECT `id` FROM `{$table}`")->fetchAll(PDO::FETCH_COLUMN) as $id) $have[$id] = true;
+
+    // Two indexes, because a CSV without an id column mints a fresh UUID for
+    // every row — matching on id alone let a second run insert everything
+    // again. The natural key is what actually recognises a record.
+    $haveId = [];
+    $haveKey = [];
+    foreach ($pdo->query("SELECT * FROM `{$table}`")->fetchAll() as $existing) {
+        $haveId[$existing['id']] = true;
+        $k = natural_key($table, $existing);
+        if ($k !== null) $haveKey[$k] = true;
+    }
 
     $inserted = 0; $skipped = 0; $failed = 0; $errors = [];
     $line = 1;
@@ -73,15 +86,18 @@ function import_csv(string $table, string $path): array {
         foreach ($known as $i => $col) {
             $data[$col] = coerce($row[$i] ?? null, column_type($table, $col));
         }
+        $key = natural_key($table, $data);
+        if ($key !== null && isset($haveKey[$key]))      { $skipped++; continue; }
+        if (!empty($data['id']) && isset($haveId[$data['id']])) { $skipped++; continue; }
         if (empty($data['id'])) $data['id'] = uuid4();
-        if (isset($have[$data['id']])) { $skipped++; continue; }
 
         try {
             $cols  = array_keys($data);
             $names = implode(',', array_map(static fn($c) => "`{$c}`", $cols));
             $marks = implode(',', array_fill(0, count($cols), '?'));
             $pdo->prepare("INSERT INTO `{$table}` ({$names}) VALUES ({$marks})")->execute(array_values($data));
-            $have[$data['id']] = true;
+            $haveId[$data['id']] = true;
+            if ($key !== null) $haveKey[$key] = true;   // catches repeats within one file too
             $inserted++;
         } catch (Throwable $e) {
             $failed++;
@@ -171,6 +187,9 @@ a{color:var(--primary);font-weight:600}
       <input type="file" name="csv" accept=".csv,text/csv" required>
       <button type="submit">Import</button>
     </form>
+    <div class="warn" style="margin-top:16px">A few thousand rows can take a minute. The page looks
+      idle while it works — <b>don't reload or submit twice.</b> If you already did, nothing is lost:
+      run <a href="fix-duplicates.php">fix-duplicates.php</a> to merge the copies back together.</div>
     <div class="small">Upload limit on this server: <?= h(ini_get('upload_max_filesize')) ?>.
       For a bigger file, split the CSV or raise <code>upload_max_filesize</code> in cPanel’s MultiPHP INI Editor.</div>
   <?php endif; ?>

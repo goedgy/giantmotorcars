@@ -66,8 +66,33 @@ Import **`leads` and `sold_customers` first** — `messages` and
 
 The importer maps Postgres types to MySQL as it goes: `true`/`false` become
 1/0, ISO timestamps become `DATETIME`, empty strings become `NULL`, and
-`"1,204.50"` becomes `1204.50`. Rows whose id already exists are skipped, so
-re-running the same file is harmless if an import is interrupted.
+`"1,204.50"` becomes `1204.50`.
+
+**Re-running the same file is harmless.** A row is skipped if its id is
+already present, *or* if its natural key is — VIN + last name for a sold
+customer, DealerCenter id (or name + phone) for a lead. The natural key is
+what matters for a CSV with no `id` column, such as a Frazer export: without
+it every row would arrive as a brand new record.
+
+A large file can take a minute with no visible sign of progress. Don't
+reload or submit twice — and if you already have, nothing is lost: see
+below.
+
+### If you ended up with duplicates
+
+Open **`fix-duplicates.php`** (signed in). It scans every table, shows you
+what it found, and changes nothing until you confirm.
+
+It merges rather than deletes. For each set of copies it keeps the most
+complete row — the oldest wins a tie, since that's the one everything else
+already points at — then:
+
+1. fills in any field only the copies have (so an imported lienholder
+   survives, and so does a tag number that only ever existed in the CRM),
+2. moves the copies' sent email and lead activity onto the kept row,
+3. and only then removes the empty shells.
+
+Run it as many times as you like; once clean it reports nothing to do.
 
 Delete `import-supabase.php` when you're done.
 
@@ -91,6 +116,8 @@ Delete `import-supabase.php` when you're done.
 | `schema.sql` | the seven tables |
 | `setup.php` | install wizard — delete after use |
 | `import-supabase.php` | CSV migration — delete after use |
+| `fix-duplicates.php` | merges rows that are the same record under different ids — delete after use |
+| `api/dupkeys.php` | what counts as "the same record" — shared by the importer and the cleanup |
 
 ---
 
@@ -156,3 +183,5 @@ send on a schedule. Not built yet, but the database is already shaped for it.
 | "API not found" | The `api/` folder didn't upload, or uploaded to the wrong level |
 | Blank white page | PHP error — check cPanel → **Errors**, and confirm the PHP version is 8.0+ |
 | Template with an image won't save | `post_max_size` too small — see above |
+| Import looks frozen | A few thousand rows takes a minute. Wait it out; don't submit twice |
+| Records appear twice | Run `fix-duplicates.php` |
